@@ -33,14 +33,14 @@ export default function PubModal({ pub, open, onClose }: Props) {
   const { totalVisitors, externalPercentage, capacity } = getCapacityInfo(pub, isOpen)
   const visitorStatus = capacity !== null ? getVisitorStatus(capacity * 100) : null
 
+  if (typeof pub.beer_price === 'number' && pub.beer_price < 1) {
+    pub.beer_price = undefined
+  }
+
   const hasAnyPrice =
     typeof pub.beer_price === 'number' ||
     typeof pub.cider_price === 'number' ||
     typeof pub.drink_price === 'number'
-
-  if (typeof pub.beer_price === 'number' && pub.beer_price < 1) {
-    pub.beer_price = undefined 
-  }
 
   const wordLimit = 35
   let descriptionNode = null

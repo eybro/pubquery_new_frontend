@@ -46,7 +46,7 @@ export default function Home() {
           draggable={false}
         />
       </div>
-      <div className="-mt-6 text-2xl text-white/90 text-center font-semibold">
+      <div className="-mt-6 text-lg sm:text-2xl text-white/90 text-center font-semibold">
         Studentpubar med liveinformation
       </div>
 

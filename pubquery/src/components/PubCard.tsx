@@ -23,8 +23,6 @@ export default function PubCard({ pub, onClick }: Props) {
   const visitorStatus = capacity !== null ? getVisitorStatus(capacity * 100) : null
   const shortCard = isShortCard(isOpen, totalVisitors)
 
-  console.log('pub', pub)
-
   return (
     <div
       className="
