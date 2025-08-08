@@ -2,12 +2,7 @@ import { MapPin, Users, Clock, Calendar, Beer } from 'lucide-react'
 import type { Pub } from '../types/Pub'
 import { format, differenceInCalendarDays, isToday, isTomorrow } from 'date-fns'
 import { getOpenString } from '../utils/dateString'
-import {
-  getCapacityInfo,
-  getVisitorStatus,
-  isShortCard,
-  lineLengthLabels,
-} from '../utils/pubUtils'
+import { getCapacityInfo, getVisitorStatus, isShortCard, lineLengthLabels } from '../utils/pubUtils'
 import { StatusLabel } from '../utils/capacity'
 type Props = {
   pub: Pub
@@ -102,7 +97,6 @@ export default function PubCard({ pub, onClick }: Props) {
                 return <StatusLabel emoji={label.emoji} text={label.text} color={label.color} />
               })()}
             </div>
-            
           )}
 
         {/* If visitor info */}

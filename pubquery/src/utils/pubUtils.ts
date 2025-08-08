@@ -51,9 +51,5 @@ export function getVisitorStatus(capacityPercent: number | null) {
 }
 
 export function isShortCard(isOpen: boolean, totalVisitors: number | null) {
-  return (
-    !isOpen ||
-    (
-      totalVisitors === null)
-  )
+  return !isOpen || totalVisitors === null
 }

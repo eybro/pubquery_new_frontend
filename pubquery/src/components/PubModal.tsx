@@ -73,8 +73,8 @@ export default function PubModal({ pub, open, onClose }: Props) {
       onClick={onClose} // Click outside triggers close
     >
       <div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl p-8 animate-fadein 
-    max-h-[90vh] overflow-y-auto"
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl p-4 sm:p-8 animate-fadein 
+  max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -163,7 +163,7 @@ export default function PubModal({ pub, open, onClose }: Props) {
         {hasAnyPrice && (
           <>
             <div className="font-bold mb-1 text-gray-800">Priser</div>
-            <div className="flex gap-3 mb-6">
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
               {priceBlock('Öl', pub.beer_price)}
               {priceBlock('Cider', pub.cider_price)}
               {priceBlock('Drink', pub.drink_price)}

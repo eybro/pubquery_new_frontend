@@ -45,8 +45,6 @@ export default function DinnerModal({ dinner, open, onClose }: Props) {
 
   const signupClosed = signupTime && now > signupTime
 
-
-
   const wordLimit = 35
   let descriptionNode = null
   if (dinner.description) {

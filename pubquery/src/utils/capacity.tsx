@@ -1,4 +1,3 @@
-
 type StatusLabelProps = { text: string; emoji: string; color: string }
 export function StatusLabel({ text, emoji, color }: StatusLabelProps) {
   return (
