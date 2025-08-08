@@ -50,12 +50,10 @@ export function getVisitorStatus(capacityPercent: number | null) {
   return { text: 'Få besökare', emoji: '🟢', color: 'text-green-500', bar: 'bg-green-500' }
 }
 
-export function isShortCard(pub: Pub, isOpen: boolean, totalVisitors: number | null) {
+export function isShortCard(isOpen: boolean, totalVisitors: number | null) {
   return (
     !isOpen ||
-    ((!pub.line_length ||
-      pub.line_length === 'no_line' ||
-      !(pub.line_length in lineLengthLabels)) &&
+    (
       totalVisitors === null)
   )
 }

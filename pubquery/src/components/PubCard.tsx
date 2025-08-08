@@ -26,7 +26,7 @@ export default function PubCard({ pub, onClick }: Props) {
 
   const attendanceStarted = isOpen
   const visitorStatus = capacity !== null ? getVisitorStatus(capacity * 100) : null
-  const shortCard = isShortCard(pub, isOpen, totalVisitors)
+  const shortCard = isShortCard(isOpen, totalVisitors)
 
   console.log('pub', pub)
 
@@ -59,7 +59,7 @@ export default function PubCard({ pub, onClick }: Props) {
         )}
       </div>
       {/* Overline / subtitle */}
-      <div className="text-xs uppercase tracking-wide font-semibold mb-1 text-blue-700">
+      <div className="text-xs uppercase tracking-wide font-semibold mb-1 text-blue-700 truncate max-w-[calc(100%-40px)]">
         {pub.title}
       </div>
       <h3 className="font-bold text-lg">{pub.venue_name}</h3>
@@ -102,6 +102,7 @@ export default function PubCard({ pub, onClick }: Props) {
                 return <StatusLabel emoji={label.emoji} text={label.text} color={label.color} />
               })()}
             </div>
+            
           )}
 
         {/* If visitor info */}
