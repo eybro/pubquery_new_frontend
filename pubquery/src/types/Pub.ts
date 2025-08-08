@@ -1,4 +1,3 @@
-
 export type Pub = {
   event_id: number
   organization_id: number

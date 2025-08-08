@@ -1,15 +1,20 @@
 import { MapPin, Users, Clock, Calendar, Beer } from 'lucide-react'
 import type { Pub } from '../types/Pub'
-import { format, differenceInCalendarDays, isToday, isTomorrow } from "date-fns"
-import { getOpenString } from "../utils/dateString"
-import { getCapacityInfo, getVisitorStatus, isShortCard, lineLengthLabels, StatusLabel } from '../utils/capacity'
+import { format, differenceInCalendarDays, isToday, isTomorrow } from 'date-fns'
+import { getOpenString } from '../utils/dateString'
+import {
+  getCapacityInfo,
+  getVisitorStatus,
+  isShortCard,
+  lineLengthLabels,
+} from '../utils/pubUtils'
+import { StatusLabel } from '../utils/capacity'
 type Props = {
   pub: Pub
   onClick?: () => void
 }
 
-
-export default function PubCard({ pub, onClick  }: Props) {
+export default function PubCard({ pub, onClick }: Props) {
   const openTime = new Date(pub.date)
   const now = new Date()
   const isOpen = now >= openTime
@@ -17,19 +22,16 @@ export default function PubCard({ pub, onClick  }: Props) {
   const isSameDay = openTime.toDateString() === now.toDateString()
   const statusText = isOpen ? `Öppnade ${timeStr}` : `Öppnar ${timeStr}`
 
-    const {
-    totalVisitors,
-    externalPercentage,
-    capacity
-  } = getCapacityInfo(pub, isOpen)
+  const { totalVisitors, externalPercentage, capacity } = getCapacityInfo(pub, isOpen)
 
   const attendanceStarted = isOpen
   const visitorStatus = capacity !== null ? getVisitorStatus(capacity * 100) : null
   const shortCard = isShortCard(pub, isOpen, totalVisitors)
 
+  console.log('pub', pub)
 
   return (
-     <div
+    <div
       className="
         bg-white text-black rounded-xl shadow-md p-4 min-h-[195px]
         flex flex-col transition-all duration-200
@@ -43,7 +45,7 @@ export default function PubCard({ pub, onClick  }: Props) {
       <div
         className="absolute top-4 right-4 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white shadow"
         style={{ overflow: 'hidden' }}
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {pub.logo_url ? (
           <img
@@ -58,7 +60,7 @@ export default function PubCard({ pub, onClick  }: Props) {
       </div>
       {/* Overline / subtitle */}
       <div className="text-xs uppercase tracking-wide font-semibold mb-1 text-blue-700">
-      {pub.title}
+        {pub.title}
       </div>
       <h3 className="font-bold text-lg">{pub.venue_name}</h3>
 
@@ -68,38 +70,39 @@ export default function PubCard({ pub, onClick  }: Props) {
         </p>
 
         <div className="text-sm flex items-center gap-2 mb-1">
-  {isOpen ? (
-    <>
-      <Clock size={14} className="text-green-500" />
-      <span>Öppnade {timeStr}</span>
-    </>
-  ) : isSameDay ? (
-    <>
-      <Clock size={14} className="text-blue-500" />
-      <span>{statusText}</span>
-    </>
-  ) : (
-    <>
-      <Calendar size={14} className="text-blue-500" />
-      <span>{getOpenString(openTime, now)}</span>
-    </>
-  )}
-</div>
-
+          {isOpen ? (
+            <>
+              <Clock size={14} className="text-green-500" />
+              <span>Öppnade {timeStr}</span>
+            </>
+          ) : isSameDay ? (
+            <>
+              <Clock size={14} className="text-blue-500" />
+              <span>{statusText}</span>
+            </>
+          ) : (
+            <>
+              <Calendar size={14} className="text-blue-500" />
+              <span>{getOpenString(openTime, now)}</span>
+            </>
+          )}
+        </div>
 
         {/* If queue info */}
-        {attendanceStarted && pub.line_length !== 'no_line' && pub.line_length in lineLengthLabels && (
-          <div className="mt-2 text-sm flex items-center gap-2 justify-between">
-            <div className="flex items-center gap-1 text-gray-700">
-              <Users size={14} />
-              <span>Kö</span>
+        {attendanceStarted &&
+          pub.line_length !== 'no_line' &&
+          pub.line_length in lineLengthLabels && (
+            <div className="mt-2 text-sm flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-1 text-gray-700">
+                <Users size={14} />
+                <span>Kö</span>
+              </div>
+              {(() => {
+                const label = lineLengthLabels[pub.line_length as keyof typeof lineLengthLabels]
+                return <StatusLabel emoji={label.emoji} text={label.text} color={label.color} />
+              })()}
             </div>
-            {(() => {
-              const label = lineLengthLabels[pub.line_length as keyof typeof lineLengthLabels]
-              return <StatusLabel emoji={label.emoji} text={label.text} color={label.color} />
-            })()}
-          </div>
-        )}
+          )}
 
         {/* If visitor info */}
         {attendanceStarted &&
@@ -129,9 +132,7 @@ export default function PubCard({ pub, onClick  }: Props) {
               )}
 
               {externalPercentage !== null && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {externalPercentage}% externa besökare
-                </p>
+                <p className="text-xs text-gray-500 mt-1">{externalPercentage}% externa besökare</p>
               )}
             </>
           )}
@@ -155,24 +156,21 @@ export default function PubCard({ pub, onClick  }: Props) {
           )}
 
         {/* Subtle divider for short cards */}
-        {shortCard && (
-          <div className="border-t border-gray-300 my-3" />
-        )}
+        {shortCard && <div className="border-t border-gray-300 my-3" />}
       </div>
 
       {/* Footer always at the bottom */}
-         <div>
-  {!attendanceStarted && (
-  <p className="text-sm text-gray-400 italic mt-1">
-    {isToday(openTime)
-      ? getOpenString(openTime, now)
-      : isTomorrow(openTime)
-      ? "Öppnar imorgon"
-      : `Öppnar om ${differenceInCalendarDays(openTime, now)} dagar`}
-  </p>
-)}
-</div>
-
+      <div>
+        {!attendanceStarted && (
+          <p className="text-sm text-gray-400 italic mt-1">
+            {isToday(openTime)
+              ? getOpenString(openTime, now)
+              : isTomorrow(openTime)
+                ? 'Öppnar imorgon'
+                : `Öppnar om ${differenceInCalendarDays(openTime, now)} dagar`}
+          </p>
+        )}
+      </div>
     </div>
   )
 }

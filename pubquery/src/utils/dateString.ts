@@ -1,9 +1,26 @@
-import { format, isToday, isTomorrow, differenceInCalendarDays, isThisWeek, differenceInMinutes } from "date-fns"
+import {
+  format,
+  isToday,
+  isTomorrow,
+  differenceInCalendarDays,
+  isThisWeek,
+  differenceInMinutes,
+} from 'date-fns'
 
-const weekdayNames = ["söndag", "måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag"]
+const weekdayNames = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag']
 const swedishMonths = [
-  "januari", "februari", "mars", "april", "maj", "juni",
-  "juli", "augusti", "september", "oktober", "november", "december"
+  'januari',
+  'februari',
+  'mars',
+  'april',
+  'maj',
+  'juni',
+  'juli',
+  'augusti',
+  'september',
+  'oktober',
+  'november',
+  'december',
 ]
 
 export function getSwedishOrdinal(n: number): string {
@@ -22,13 +39,13 @@ export function getOpenString(openTime: Date, now: Date): string {
     const minutes = Math.max(0, differenceInMinutes(openTime, now))
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
-    let parts = []
-    if (hours > 0) parts.push(`${hours} ${hours === 1 ? "timme" : "timmar"}`)
+    const parts = []
+    if (hours > 0) parts.push(`${hours} ${hours === 1 ? 'timme' : 'timmar'}`)
     if (mins > 0) parts.push(`${mins} minuter`)
-    if (parts.length === 0) parts.push("mindre än en minut")
-    return `Öppnar om ${parts.join(" ")}`
+    if (parts.length === 0) parts.push('mindre än en minut')
+    return `Öppnar om ${parts.join(' ')}`
   }
-  const hourMinute = format(openTime, "HH:mm")
+  const hourMinute = format(openTime, 'HH:mm')
   if (isTomorrow(openTime)) {
     return `Öppnar ${hourMinute} i morgon`
   }
