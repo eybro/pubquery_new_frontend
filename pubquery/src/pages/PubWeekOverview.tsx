@@ -197,38 +197,38 @@ export default function PubWeekOverview({
             </div>
           )}
           {selectedDay.cheapestBeer && selectedDay.cheapestBeer.length > 0 && (
-          <div className="bg-[#232b32] p-3 rounded-xl flex flex-col items-center flex-1 min-w-0 shadow border border-[#232a35]">
-            <Beer size={22} className="mb-1 text-sky-400" />
-            <span className="text-lg font-bold text-white">
-              {selectedDay.cheapestBeer && selectedDay.cheapestBeer.length > 0
-                ? `${selectedDay.cheapestBeer[0].price} kr`
-                : '-'}
-            </span>
-            <span className="text-xs text-gray-400">
-              {selectedDay.cheapestBeer && selectedDay.cheapestBeer.length > 0 ? (
-                <>
-                  Billigaste öl:{' '}
-                  {selectedDay.cheapestBeer.length > 1 ? (
-                    <Tooltip
-                      tooltip={selectedDay.cheapestBeer
-                        .slice(1)
-                        .map((b) => b.name)
-                        .join(', ')}
-                    >
-                      <span className="ml-1 underline cursor-pointer">
-                        {selectedDay.cheapestBeer[0].name} +{selectedDay.cheapestBeer.length - 1}{' '}
-                        fler
-                      </span>
-                    </Tooltip>
-                  ) : (
-                    <span className="ml-1">{selectedDay.cheapestBeer[0].name}</span>
-                  )}
-                </>
-              ) : (
-                'Billigaste öl'
-              )}
-            </span>
-          </div>
+            <div className="bg-[#232b32] p-3 rounded-xl flex flex-col items-center flex-1 min-w-0 shadow border border-[#232a35]">
+              <Beer size={22} className="mb-1 text-sky-400" />
+              <span className="text-lg font-bold text-white">
+                {selectedDay.cheapestBeer && selectedDay.cheapestBeer.length > 0
+                  ? `${selectedDay.cheapestBeer[0].price} kr`
+                  : '-'}
+              </span>
+              <span className="text-xs text-gray-400">
+                {selectedDay.cheapestBeer && selectedDay.cheapestBeer.length > 0 ? (
+                  <>
+                    Billigaste öl:{' '}
+                    {selectedDay.cheapestBeer.length > 1 ? (
+                      <Tooltip
+                        tooltip={selectedDay.cheapestBeer
+                          .slice(1)
+                          .map((b) => b.name)
+                          .join(', ')}
+                      >
+                        <span className="ml-1 underline cursor-pointer">
+                          {selectedDay.cheapestBeer[0].name} +{selectedDay.cheapestBeer.length - 1}{' '}
+                          fler
+                        </span>
+                      </Tooltip>
+                    ) : (
+                      <span className="ml-1">{selectedDay.cheapestBeer[0].name}</span>
+                    )}
+                  </>
+                ) : (
+                  'Billigaste öl'
+                )}
+              </span>
+            </div>
           )}
         </div>
 

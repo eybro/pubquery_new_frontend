@@ -7,6 +7,8 @@ import DinnerModal from '../components/DinnerModal'
 import { Beer, Ticket, ArrowRight } from 'lucide-react'
 import type { Pub } from '../types/Pub'
 import type { Dinner } from '../types/Dinner'
+import { useJsonLd, pubToEventJsonLd } from '@/utils/seo'
+import { useMemo } from 'react'
 
 function sortByDateAsc(a: { date: string }, b: { date: string }) {
   return new Date(a.date).getTime() - new Date(b.date).getTime()
@@ -35,6 +37,19 @@ export default function Home() {
   const suPubs = pubs
     .filter((pub) => pub.location?.toLowerCase().startsWith('stockholms universitet'))
     .sort(sortByDateAsc)
+
+  const eventsGraph = useMemo(() => {
+    const list = pubs
+      // .filter(p => p.visible === 1) // uncomment if needed
+      .slice() // copy
+      .sort(sortByDateAsc)
+      .slice(0, 15)
+      .map(pubToEventJsonLd)
+
+    return list.length ? { '@context': 'https://schema.org', '@graph': list } : null
+  }, [pubs])
+
+  useJsonLd('home-events', eventsGraph)
 
   return (
     <div className="text-white min-h-screen p-4 space-y-6">
