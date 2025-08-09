@@ -95,6 +95,33 @@ export function toLocalISOWithOffset(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${sign}${tzh}:${tzm}`
 }
 
+function buildOffers(pub: Pub): JsonLdObject[] | undefined {
+  const offers: JsonLdObject[] = []
+  const eventUrl =
+    normalizeFacebookUrl(pub.fb_link, pub.fb_page) ||
+    `https://pubquery.se/?event=${pub.event_id}`
+
+  const add = (name: string, raw?: number | null) => {
+    if (raw == null) return
+    const n = Number(raw)
+    if (!Number.isFinite(n) || n <= 0) return
+    offers.push({
+      '@type': 'Offer',
+      name,
+      price: n,
+      priceCurrency: 'SEK',
+      availability: 'https://schema.org/InStock',
+      url: eventUrl,
+    })
+  }
+
+  add('Öl', pub.beer_price)
+  add('Cider', pub.cider_price)
+  add('Drink', pub.drink_price)
+
+  return offers.length ? offers : undefined
+}
+
 /** Upsert <title> and <meta name="description"> without creating duplicates. */
 export function usePageMeta(title?: string, description?: string) {
   useEffect(() => {
@@ -132,7 +159,8 @@ export function pubToEventJsonLd(pub: Pub): JsonLdObject {
   const event: JsonLdObject = {
     '@type': 'SocialEvent',
     name: pub.title,
-    startDate: pub.date,
+    startDate: pub.date,                     // keep UTC "Z"
+    // endDate: pub.end_date ?? undefined,   // include if/when you have it
     eventStatus: 'https://schema.org/EventScheduled',
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     url: `https://pubquery.se/?event=${pub.event_id}`,
@@ -143,21 +171,29 @@ export function pubToEventJsonLd(pub: Pub): JsonLdObject {
     organizer: {
       '@type': 'Organization',
       name: pub.display_name || 'Arrangör',
+      url: sameAs || undefined,              // <- new: organizer URL (FB/event page)
       sameAs: sameAs || undefined,
+    } as JsonLdObject,
+    performer: {
+      '@type': 'Organization',
+      name: pub.display_name || 'Arrangör',  // <- new: performer (optional)
     } as JsonLdObject,
     location: {
       '@type': 'Place',
       name: pub.venue_name || pub.location || 'Studentpub',
       address: postal ?? pub.address ?? undefined,
     } as JsonLdObject,
+    offers: buildOffers(pub),                 // <- new: offers from drink prices
   }
 
+  // prune undefined
   for (const k of Object.keys(event)) if (event[k] === undefined) delete event[k]
   for (const k of Object.keys(event.organizer as JsonLdObject)) if ((event.organizer as JsonLdObject)[k] === undefined) delete (event.organizer as JsonLdObject)[k]
   for (const k of Object.keys(event.location as JsonLdObject)) if ((event.location as JsonLdObject)[k] === undefined) delete (event.location as JsonLdObject)[k]
 
   return event
 }
+
 
 export function dinnerToEventJsonLd(d: Dinner): JsonLdObject {
   const postal = parsePostalAddress((d as unknown as { address?: string }).address)
