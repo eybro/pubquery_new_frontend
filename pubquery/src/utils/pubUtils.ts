@@ -6,32 +6,52 @@ export const lineLengthLabels = {
   long: { text: 'Lång kö', emoji: '🔴', color: 'text-red-500' },
 }
 
+// --- Type guard so TS narrows properly ---
+function hasMemberCounts(pub: Pub): pub is Pub & {
+  member_count: number
+  non_member_count: number
+} {
+  return typeof (pub as any).member_count === 'number' &&
+         typeof (pub as any).non_member_count === 'number'
+}
+
 export function getCapacityInfo(pub: Pub, isOpen: boolean) {
-  const hasMemberData =
-    typeof pub.member_count === 'number' && typeof pub.non_member_count === 'number'
-  const hasTotalAttendance = typeof pub.total_attendance === 'number'
+  const hasTotalAttendance = typeof (pub as any).total_attendance === 'number'
 
   let totalVisitors: number | null = null
   let externalPercentage: number | null = null
 
   if (isOpen) {
-    if (hasMemberData) {
+    if (hasMemberCounts(pub)) {
       totalVisitors = pub.member_count + pub.non_member_count
-      externalPercentage =
-        totalVisitors > 0 ? Math.round((pub.non_member_count / totalVisitors) * 100) : 0
+      if (totalVisitors > 0) {
+        externalPercentage = Math.round((pub.non_member_count / totalVisitors) * 100)
+      } else {
+        externalPercentage = 0
+      }
     } else if (hasTotalAttendance) {
-      totalVisitors = pub.total_attendance
+      // guaranteed number by the check above
+      totalVisitors = (pub as any).total_attendance as number
+      // no member split available -> leave externalPercentage as null
     }
   }
 
+  // Cap at 50 if we have a value
   if (externalPercentage !== null && externalPercentage > 50) {
     externalPercentage = 50
   }
 
-  const capacity = totalVisitors !== null ? totalVisitors / pub.max_capacity : null
+  // Max capacity may be missing or 0; keep capacity as null in those cases
+  const maxCap =
+    typeof (pub as any).max_capacity === 'number' && (pub as any).max_capacity > 0
+      ? ((pub as any).max_capacity as number)
+      : null
+
+  const capacity =
+    totalVisitors !== null && maxCap !== null ? totalVisitors / maxCap : null
 
   return {
-    hasMemberData,
+    hasMemberData: hasMemberCounts(pub),
     hasTotalAttendance,
     totalVisitors,
     externalPercentage,
