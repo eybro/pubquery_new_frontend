@@ -15,7 +15,7 @@ export default function PubCard({ pub, onClick }: Props) {
   const isOpen = now >= openTime
   const timeStr = format(openTime, 'HH:mm')
   const isSameDay = openTime.toDateString() === now.toDateString()
-  const statusText = isOpen ? `Öppnade ${timeStr}` : `Öppnar ${timeStr}`
+  const statusText = isOpen ? `Öppnade ${timeStr}` : `Öppnar ${timeStr} idag`
 
   const { totalVisitors, externalPercentage, capacity } = getCapacityInfo(pub, isOpen)
 

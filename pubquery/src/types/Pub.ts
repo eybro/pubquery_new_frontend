@@ -10,12 +10,12 @@ export type Pub = {
   location: string
   location_group?: string
   max_capacity: number
-  visible: boolean
-  ratio_visible: boolean
-  member_count: number
-  non_member_count: number
+  visible?: boolean
+  ratio_visible?: boolean
+  member_count?: number
+  non_member_count?: number
   line_length: string
-  total_attendance: number
+  total_attendance?: number
   description: string
   display_name: string
   beer_price?: number

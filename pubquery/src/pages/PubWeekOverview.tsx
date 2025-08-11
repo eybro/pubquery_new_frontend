@@ -5,6 +5,15 @@ import { Beer, Users, Calendar, ArrowLeft, ArrowRight, Home } from 'lucide-react
 import PubCard from '../components/PubCard'
 import PubModal from '../components/PubModal'
 import type { Pub } from '@/types/Pub'
+import { useMemo } from 'react'
+import { parseISO } from 'date-fns'
+import { prepareKthPubsWithBrazilia } from '@/utils/kthBrazilia'
+
+function isWeekdayISO(iso: string) {
+  const d = iso.length > 10 ? new Date(iso) : parseISO(iso)
+  const day = d.getDay() // 0=Sun..6=Sat
+  return day >= 1 && day <= 5
+}
 
 type WeekOverviewDay = {
   date: string
@@ -105,9 +114,28 @@ export default function PubWeekOverview({
   const handleThisWeek = () => setSelectedWeek(startOfWeek(new Date(), { weekStartsOn: 1 }))
   const handleSelectDay = (idx: number) => setSelectedDayIdx(idx)
 
+   const isKTH = location.toLowerCase().startsWith('kth')
+
+  const daysWithBrazilia: WeekOverviewDay[] = useMemo(() => {
+    if (!weekOverview) return []                                         // always an array
+    if (!isKTH) return weekOverview.days                                 // unchanged for non-KTH
+    return weekOverview.days.map((day) => {
+      if (!isWeekdayISO(day.date)) return day
+      const pubsForDay = prepareKthPubsWithBrazilia(day.pubs, {
+        today: day.date.slice(0, 10),
+        injectOnWeekdaysOnly: false,
+      })
+      return { ...day, pubs: pubsForDay }
+    })
+  }, [weekOverview, isKTH])
+
   if (!weekOverview) return <div className="text-gray-200">Laddar...</div>
-  const days = weekOverview.days
-  const selectedDay = days[selectedDayIdx]
+
+  // Safe selection even if array is temporarily empty
+  const days = daysWithBrazilia
+  const safeIdx = Math.min(selectedDayIdx, Math.max(days.length - 1, 0))
+  const selectedDay = days[safeIdx]
+
 
   return (
     <div className="min-h-screen bg-[#161a1d] p-4">
@@ -207,7 +235,7 @@ export default function PubWeekOverview({
               <span className="text-xs text-gray-400">
                 {selectedDay.cheapestBeer && selectedDay.cheapestBeer.length > 0 ? (
                   <>
-                    Billigaste öl:{' '}
+                    Billigaste öl ikväll:{''}
                     {selectedDay.cheapestBeer.length > 1 ? (
                       <Tooltip
                         tooltip={selectedDay.cheapestBeer

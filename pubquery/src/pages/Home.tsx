@@ -9,10 +9,7 @@ import type { Pub } from '../types/Pub'
 import type { Dinner } from '../types/Dinner'
 import { useJsonLd, pubToEventJsonLd } from '@/utils/seo'
 import { useMemo } from 'react'
-
-function sortByDateAsc(a: { date: string }, b: { date: string }) {
-  return new Date(a.date).getTime() - new Date(b.date).getTime()
-}
+import { prepareKthPubsWithBrazilia, sortByDateAsc } from '@/utils/kthBrazilia'
 
 export default function Home() {
   const [pubs, setPubs] = useState<Pub[]>([])
@@ -30,9 +27,7 @@ export default function Home() {
       .then((data) => setDinners(data))
   }, [])
 
-  const kthPubs = pubs
-    .filter((pub) => pub.location?.toLowerCase().startsWith('kth'))
-    .sort(sortByDateAsc)
+  const kthPubs = prepareKthPubsWithBrazilia(pubs)
 
   const suPubs = pubs
     .filter((pub) => pub.location?.toLowerCase().startsWith('stockholms universitet'))
