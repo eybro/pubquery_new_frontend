@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Beer, LogIn, Mail, Home } from 'lucide-react'
+import { Beer, LogIn, Mail, Home, DoorOpen } from 'lucide-react'
 import { siFacebook, siInstagram } from 'simple-icons/icons'
 
 function BrandIcon({ path, color }: { path: string; color: string }) {
@@ -48,6 +48,18 @@ export default function Footer() {
             <span className="text-sm font-medium">Logga in</span>
           </a>
 
+          {/* Counter */}
+          <a
+            href="https://admin.pubquery.se"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[#232b32] focus:outline-none focus:ring-2 focus:ring-sky-400 transition text-gray-100"
+            aria-label="Räknar-app"
+          >
+            <DoorOpen size={16} className="text-sky-400" />
+            <span className="text-sm font-medium">Räknar-app</span>
+          </a>
+
           {/* Contact */}
           <a
             href="mailto:info@pubquery.se"
@@ -67,7 +79,6 @@ export default function Footer() {
             aria-label="Instagram"
           >
             <BrandIcon path={siInstagram.path} color="#E4405F" />
-            <span className="text-sm font-medium">Instagram</span>
           </a>
 
           {/* Facebook */}
@@ -79,7 +90,6 @@ export default function Footer() {
             aria-label="Facebook"
           >
             <BrandIcon path={siFacebook.path} color="#1877F2" />
-            <span className="text-sm font-medium">Facebook</span>
           </a>
         </nav>
       </div>
