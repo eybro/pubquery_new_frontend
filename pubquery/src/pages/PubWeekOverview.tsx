@@ -138,7 +138,7 @@ export default function PubWeekOverview({
 
 
   return (
-    <div className="min-h-screen bg-[#161a1d] p-4">
+    <div className="min-h-screen p-4">
       <div className="max-w-5xl mx-auto">
         {/* Week Label (calendar) + Selector Buttons */}
         <div className="flex flex-wrap items-center gap-3 mb-5">

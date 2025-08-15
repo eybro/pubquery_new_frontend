@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /404
+Disallow: /not-found
+Sitemap: https://pubquery.se/sitemap.xml

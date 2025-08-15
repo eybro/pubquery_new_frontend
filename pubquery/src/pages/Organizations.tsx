@@ -141,7 +141,7 @@ export default function OrganizationsDirectory() {
   if (loading) {
     
     return (
-      <div className="min-h-screen bg-[#161a1d] p-4">
+      <div className="min-h-screen p-4">
         <div className="max-w-5xl mx-auto">
           <Header />
           <div className="mt-4 text-gray-300">Laddar föreningar…</div>
@@ -152,7 +152,7 @@ export default function OrganizationsDirectory() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#161a1d] p-4">
+      <div className="min-h-screen p-4">
         <div className="max-w-5xl mx-auto">
           <Header />
           <div className="mt-4 text-red-300">Kunde inte hämta data: {error}</div>
@@ -162,7 +162,7 @@ export default function OrganizationsDirectory() {
   }
 
   return (
-    <div className="min-h-screen bg-[#161a1d] p-4">
+    <div className="min-h-screen p-4">
       <div className="max-w-5xl mx-auto">
         <Header />
 
