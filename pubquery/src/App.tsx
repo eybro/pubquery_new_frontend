@@ -27,6 +27,7 @@ export default function App() {
             }
           />
           <Route path="/organizations" element={<OrganizationsDirectory />} />
+          <Route path="/org/:slug" element={<OrganizationsDirectory />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
