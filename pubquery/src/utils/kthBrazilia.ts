@@ -70,15 +70,12 @@ export function prepareKthPubsWithBrazilia(
     injectOnWeekdaysOnly = true,
   }: { today?: string; injectOnWeekdaysOnly?: boolean } = {}
 ) {
-  const kth = pubs
-    .filter((p) => p.location?.toLowerCase().startsWith('kth'))
-    .sort(sortByDateAsc)
+  const kth = pubs.filter((p) => p.location?.toLowerCase().startsWith('kth')).sort(sortByDateAsc)
 
   const hasBraziliaToday =
     kth.some(looksLikeBrazilia) && kth.some((p) => (p.date || '').startsWith(today))
 
-  const shouldInject =
-    (!injectOnWeekdaysOnly || isWeekdayStockholm()) && !hasBraziliaToday
+  const shouldInject = (!injectOnWeekdaysOnly || isWeekdayStockholm()) && !hasBraziliaToday
 
   if (!shouldInject) return kth
 

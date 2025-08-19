@@ -15,7 +15,6 @@ export default function Footer() {
     <footer className="bg-[#161a1d] text-white mt-8 border-t border-[#313c47]">
       <div className="max-w-5xl mx-auto px-4 py-5">
         <nav className="flex flex-wrap items-center justify-center gap-2 bg-[#22282f] border border-[#313c47] rounded-xl p-1 shadow-sm">
-          
           {/* Home */}
           <Link
             to="/"

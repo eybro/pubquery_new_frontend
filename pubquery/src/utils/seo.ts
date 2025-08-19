@@ -92,14 +92,13 @@ export function toLocalISOWithOffset(iso: string) {
   const sign = tzMin >= 0 ? '+' : '-'
   const tzh = pad(Math.floor(Math.abs(tzMin) / 60))
   const tzm = pad(Math.abs(tzMin) % 60)
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${sign}${tzh}:${tzm}`
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${sign}${tzh}:${tzm}`
 }
 
 function buildOffers(pub: Pub): JsonLdObject[] | undefined {
   const offers: JsonLdObject[] = []
   const eventUrl =
-    normalizeFacebookUrl(pub.fb_link, pub.fb_page) ||
-    `https://pubquery.se/?event=${pub.event_id}`
+    normalizeFacebookUrl(pub.fb_link, pub.fb_page) || `https://pubquery.se/?event=${pub.event_id}`
 
   const add = (name: string, raw?: number | null) => {
     if (raw == null) return
@@ -159,7 +158,7 @@ export function pubToEventJsonLd(pub: Pub): JsonLdObject {
   const event: JsonLdObject = {
     '@type': 'SocialEvent',
     name: pub.title,
-    startDate: pub.date,                     // keep UTC "Z"
+    startDate: pub.date, // keep UTC "Z"
     // endDate: pub.end_date ?? undefined,   // include if/when you have it
     eventStatus: 'https://schema.org/EventScheduled',
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
@@ -171,29 +170,32 @@ export function pubToEventJsonLd(pub: Pub): JsonLdObject {
     organizer: {
       '@type': 'Organization',
       name: pub.display_name || 'Arrangör',
-      url: sameAs || undefined,              // <- new: organizer URL (FB/event page)
+      url: sameAs || undefined, // <- new: organizer URL (FB/event page)
       sameAs: sameAs || undefined,
     } as JsonLdObject,
     performer: {
       '@type': 'Organization',
-      name: pub.display_name || 'Arrangör',  // <- new: performer (optional)
+      name: pub.display_name || 'Arrangör', // <- new: performer (optional)
     } as JsonLdObject,
     location: {
       '@type': 'Place',
       name: pub.venue_name || pub.location || 'Studentpub',
       address: postal ?? pub.address ?? undefined,
     } as JsonLdObject,
-    offers: buildOffers(pub),                 // <- new: offers from drink prices
+    offers: buildOffers(pub), // <- new: offers from drink prices
   }
 
   // prune undefined
   for (const k of Object.keys(event)) if (event[k] === undefined) delete event[k]
-  for (const k of Object.keys(event.organizer as JsonLdObject)) if ((event.organizer as JsonLdObject)[k] === undefined) delete (event.organizer as JsonLdObject)[k]
-  for (const k of Object.keys(event.location as JsonLdObject)) if ((event.location as JsonLdObject)[k] === undefined) delete (event.location as JsonLdObject)[k]
+  for (const k of Object.keys(event.organizer as JsonLdObject))
+    if ((event.organizer as JsonLdObject)[k] === undefined)
+      delete (event.organizer as JsonLdObject)[k]
+  for (const k of Object.keys(event.location as JsonLdObject))
+    if ((event.location as JsonLdObject)[k] === undefined)
+      delete (event.location as JsonLdObject)[k]
 
   return event
 }
-
 
 export function dinnerToEventJsonLd(d: Dinner): JsonLdObject {
   const postal = parsePostalAddress((d as unknown as { address?: string }).address)
@@ -206,18 +208,23 @@ export function dinnerToEventJsonLd(d: Dinner): JsonLdObject {
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     url: `https://pubquery.se/?dinner=${(d as unknown as { id?: string }).id ?? ''}`,
     description: (d as unknown as { description?: string }).description || undefined,
-    image: (d as unknown as { image_url?: string }).image_url ? [(d as unknown as { image_url: string }).image_url] : undefined,
+    image: (d as unknown as { image_url?: string }).image_url
+      ? [(d as unknown as { image_url: string }).image_url]
+      : undefined,
     location: {
       '@type': 'Place',
-      name: (d as unknown as { venue_name?: string; location?: string }).venue_name
-        || (d as unknown as { location?: string }).location
-        || 'Sittning',
+      name:
+        (d as unknown as { venue_name?: string; location?: string }).venue_name ||
+        (d as unknown as { location?: string }).location ||
+        'Sittning',
       address: postal ?? (d as unknown as { address?: string }).address ?? undefined,
     } as JsonLdObject,
   }
 
   for (const k of Object.keys(event)) if (event[k] === undefined) delete event[k]
-  for (const k of Object.keys(event.location as JsonLdObject)) if ((event.location as JsonLdObject)[k] === undefined) delete (event.location as JsonLdObject)[k]
+  for (const k of Object.keys(event.location as JsonLdObject))
+    if ((event.location as JsonLdObject)[k] === undefined)
+      delete (event.location as JsonLdObject)[k]
 
   return event
 }
@@ -239,13 +246,49 @@ export function venueToJsonLd(venue: {
     description: venue.description,
     image: venue.image ? [venue.image] : undefined,
     address: venue.address,
-    geo: venue.latitude && venue.longitude ? {
-      '@type': 'GeoCoordinates',
-      latitude: venue.latitude,
-      longitude: venue.longitude
-    } : undefined,
+    geo:
+      venue.latitude && venue.longitude
+        ? {
+            '@type': 'GeoCoordinates',
+            latitude: venue.latitude,
+            longitude: venue.longitude,
+          }
+        : undefined,
     sameAs: venue.sameAs && venue.sameAs.length ? venue.sameAs : undefined,
   }
   for (const k of Object.keys(data)) if (data[k] === undefined) delete data[k]
   return data
 }
+
+export const ensureMeta = (selector: string, createEl: () => HTMLMetaElement): HTMLMetaElement => {
+    const existing = document.head.querySelector(selector) as HTMLMetaElement | null
+    if (existing) return existing
+    const el = createEl()
+    document.head.appendChild(el)
+    return el
+  }
+  export const setNamed = (name: string, content: string) => {
+    const el = ensureMeta(`meta[name="${name}"]`, () => {
+      const m = document.createElement('meta')
+      m.setAttribute('name', name)
+      return m
+    })
+    el.setAttribute('content', content)
+  }
+  export const setProp = (prop: string, content: string) => {
+    const el = ensureMeta(`meta[property="${prop}"]`, () => {
+      const m = document.createElement('meta')
+      m.setAttribute('property', prop)
+      return m
+    })
+    el.setAttribute('content', content)
+  }
+  export const ensureLink = (rel: string) => {
+    let el = document.head.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null
+    if (!el) {
+      el = document.createElement('link')
+      el.rel = rel
+      document.head.appendChild(el)
+    }
+    return el
+  }

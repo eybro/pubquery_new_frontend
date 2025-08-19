@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import LocationSection from '../components/LocationSection'
 import PubCard from '../components/PubCard'
-import PubModal from '../components/PubModal'
 import DinnerCard from '../components/DinnerCard'
 import DinnerModal from '../components/DinnerModal'
 import { Beer, Ticket, ArrowRight } from 'lucide-react'
@@ -10,10 +9,14 @@ import type { Dinner } from '../types/Dinner'
 import { useJsonLd, pubToEventJsonLd } from '@/utils/seo'
 import { useMemo } from 'react'
 import { prepareKthPubsWithBrazilia, sortByDateAsc } from '@/utils/kthBrazilia'
+import { createPubLinkProps } from '@/utils/eventLinks'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 export default function Home() {
   const [pubs, setPubs] = useState<Pub[]>([])
   const [dinners, setDinners] = useState<Dinner[]>([])
+  const navigate = useNavigate()
+  const locationObj = useLocation()
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_BASE_URL}/api/pubs/getUpcoming`)
@@ -64,8 +67,9 @@ export default function Home() {
         location="Pubar på KTH"
         items={kthPubs}
         renderCard={(pub, openModal) => <PubCard pub={pub} onClick={openModal} />}
-        renderModal={(pub, open, onClose) => <PubModal pub={pub} open={open} onClose={onClose} />}
         icon={<Beer size={28} color="#1fbad6" className="shrink-0" />}
+        getLinkProps={(pub) => createPubLinkProps(pub, locationObj, navigate)}
+        getKey={(pub) => String(pub.event_id ?? `${pub.date}-${pub.venue_name}`)}
         button={
           <a
             href="/kth"
@@ -80,7 +84,8 @@ export default function Home() {
         location="Pubar på SU och KI"
         items={suPubs}
         renderCard={(pub, openModal) => <PubCard pub={pub} onClick={openModal} />}
-        renderModal={(pub, open, onClose) => <PubModal pub={pub} open={open} onClose={onClose} />}
+        getLinkProps={(pub) => createPubLinkProps(pub, locationObj, navigate)}
+        getKey={(pub) => String(pub.event_id ?? `${pub.date}-${pub.venue_name}`)}
         icon={<Beer size={28} color="#1fbad6" className="shrink-0" />}
         button={
           <a

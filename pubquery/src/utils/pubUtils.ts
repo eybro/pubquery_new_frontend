@@ -11,12 +11,14 @@ function hasMemberCounts(pub: Pub): pub is Pub & {
   member_count: number
   non_member_count: number
 } {
-  return typeof (pub as any).member_count === 'number' &&
-         typeof (pub as any).non_member_count === 'number'
+  return (
+    typeof pub.member_count === 'number' &&
+    typeof pub.non_member_count === 'number'
+  )
 }
 
 export function getCapacityInfo(pub: Pub, isOpen: boolean) {
-  const hasTotalAttendance = typeof (pub as any).total_attendance === 'number'
+  const hasTotalAttendance = typeof pub.total_attendance === 'number'
 
   let totalVisitors: number | null = null
   let externalPercentage: number | null = null
@@ -31,7 +33,7 @@ export function getCapacityInfo(pub: Pub, isOpen: boolean) {
       }
     } else if (hasTotalAttendance) {
       // guaranteed number by the check above
-      totalVisitors = (pub as any).total_attendance as number
+      totalVisitors = pub.total_attendance as number
       // no member split available -> leave externalPercentage as null
     }
   }
@@ -43,12 +45,11 @@ export function getCapacityInfo(pub: Pub, isOpen: boolean) {
 
   // Max capacity may be missing or 0; keep capacity as null in those cases
   const maxCap =
-    typeof (pub as any).max_capacity === 'number' && (pub as any).max_capacity > 0
-      ? ((pub as any).max_capacity as number)
+    typeof pub.max_capacity === 'number' && pub.max_capacity > 0
+      ? (pub.max_capacity as number)
       : null
 
-  const capacity =
-    totalVisitors !== null && maxCap !== null ? totalVisitors / maxCap : null
+  const capacity = totalVisitors !== null && maxCap !== null ? totalVisitors / maxCap : null
 
   return {
     hasMemberData: hasMemberCounts(pub),

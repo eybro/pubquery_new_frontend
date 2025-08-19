@@ -1,4 +1,4 @@
-import { X, Beer, Users, MapPin, Clock, Spool } from 'lucide-react'
+import { X, Beer, Users, MapPin, Clock, Spool, Share2 } from 'lucide-react'
 import { format, differenceInMinutes, isToday } from 'date-fns'
 import type { Pub } from '../types/Pub'
 import { useState } from 'react'
@@ -20,8 +20,36 @@ function splitDescription(text: string, wordLimit: number) {
   return { shown, rest, needsTruncate }
 }
 
+/** helpers for share URL */
+function slugify(text = '') {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-åäö]/g, '')
+}
+function base64UrlEncode(obj: unknown) {
+  const json = JSON.stringify(obj)
+  // encodeURIComponent → unescape → btoa to preserve unicode
+  const b64 = btoa(unescape(encodeURIComponent(json)))
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+}
+function buildSharePath(pub: Pub) {
+  const hasNumericId = Number.isFinite(Number(pub.event_id))
+  if (hasNumericId) {
+    const id = pub.event_id
+    const t = slugify(pub.title || pub.display_name || 'pub')
+    const v = slugify(pub.venue_name || pub.location || '')
+    return `/event/${id}-${t}-${v}`
+  }
+  // synthetic: encode the full pub
+  const data = base64UrlEncode(pub)
+  return `/event/synth?data=${data}`
+}
+
 export default function PubModal({ pub, open, onClose }: Props) {
   const [descExpanded, setDescExpanded] = useState(false)
+  const [shareState, setShareState] = useState<'idle' | 'copied' | 'error'>('idle')
   if (!open || !pub) return null
 
   // Opening logic
@@ -70,6 +98,34 @@ export default function PubModal({ pub, open, onClose }: Props) {
       {desc && <div className="text-xs text-gray-400 mt-1">{desc}</div>}
     </div>
   )
+
+  async function handleShare() {
+    if (!pub) return // TS is happy
+    const path = buildSharePath(pub)
+    const url = `${window.location.origin}${path}`
+    const title = pub.title || pub.venue_name || 'Studentpub'
+    const text = `${pub.display_name ? pub.display_name + ' – ' : ''}${pub.venue_name || pub.location || ''}`
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text, url })
+        return
+      }
+      await navigator.clipboard.writeText(url)
+      setShareState('copied')
+      setTimeout(() => setShareState('idle'), 1500)
+    } catch {
+      // last resort: select+copy via prompt
+      try {
+        const ok = window.prompt('Kopiera länken:', url)
+        if (ok !== null) setShareState('copied')
+        else setShareState('error')
+      } catch {
+        setShareState('error')
+      }
+      setTimeout(() => setShareState('idle'), 1500)
+    }
+  }
 
   return (
     <div
@@ -211,7 +267,19 @@ export default function PubModal({ pub, open, onClose }: Props) {
         )}
 
         {/* Action buttons at the bottom */}
-        <div className="flex gap-3 mt-4">
+        <div className="flex flex-wrap gap-3 mt-4">
+          <button
+            onClick={handleShare}
+            className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium shadow transition
+              ${shareState === 'copied' ? 'bg-emerald-600 text-white' : 'bg-gray-900 text-white hover:bg-black'}
+            `}
+            aria-label="Dela event"
+            title="Dela event"
+          >
+            <Share2 size={18} />
+            {shareState === 'copied' ? 'Kopierad!' : 'Dela'}
+          </button>
+
           {pub.fb_link && (
             <a
               href={pub.fb_link}
@@ -229,7 +297,6 @@ export default function PubModal({ pub, open, onClose }: Props) {
               rel="noopener noreferrer"
               className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white font-medium shadow hover:bg-green-700 transition"
             >
-              {/* <MapPin size={18} /> */}
               Google Maps
             </a>
           )}
