@@ -5,6 +5,7 @@ import {
   differenceInCalendarDays,
   isThisWeek,
   differenceInMinutes,
+  isYesterday,
 } from 'date-fns'
 
 const weekdayNames = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag']
@@ -57,4 +58,26 @@ export function getOpenString(openTime: Date, now: Date): string {
   const day = getSwedishOrdinal(openTime.getDate())
   const month = swedishMonths[openTime.getMonth()]
   return `Öppnar ${hourMinute} på ${weekday}en ${day} ${month}`
+}
+
+export function getPastDateString(openTime: Date, now: Date): string {
+  const hourMinute = format(openTime, 'HH:mm')
+
+  // Treat "yesterday" as "today" if it's still before 03:00 now
+  if (isYesterday(openTime)) {
+    if (now.getHours() < 3) {
+      return `Öppnade ${hourMinute}`
+    }
+    return `Öppnade ${hourMinute} i går`
+  }
+
+  const daysDiff = differenceInCalendarDays(now, openTime)
+  const weekday = weekdayNames[openTime.getDay()]
+  if (isThisWeek(openTime, { weekStartsOn: 1 }) && daysDiff > 1) {
+    return `Öppnade ${hourMinute} i ${weekday}s`
+  }
+
+  const day = getSwedishOrdinal(openTime.getDate())
+  const month = swedishMonths[openTime.getMonth()]
+  return `Öppnade ${hourMinute} den ${day} ${month}`
 }

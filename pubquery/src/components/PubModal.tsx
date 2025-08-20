@@ -1,8 +1,8 @@
 import { X, Beer, Users, MapPin, Clock, Spool, Share2 } from 'lucide-react'
-import { format, differenceInMinutes, isToday } from 'date-fns'
+import { format, differenceInMinutes, isToday, isSameDay } from 'date-fns'
 import type { Pub } from '../types/Pub'
 import { useState } from 'react'
-import { getOpenString } from '../utils/dateString'
+import { getOpenString, getPastDateString } from '../utils/dateString'
 import { StatusLabel } from '../utils/capacity'
 import { getCapacityInfo, getVisitorStatus } from '../utils/pubUtils'
 
@@ -58,8 +58,17 @@ export default function PubModal({ pub, open, onClose }: Props) {
   const isOpen = now >= openTime
   const timeStr = format(openTime, 'HH:mm')
   const minutesUntilOpen = differenceInMinutes(openTime, now)
+  const isSameCalDay = isSameDay(openTime, now)
   const { totalVisitors, externalPercentage, capacity } = getCapacityInfo(pub, isOpen)
   const visitorStatus = capacity !== null ? getVisitorStatus(capacity * 100) : null
+
+  const timeLabel = isOpen
+    ? isSameCalDay
+      ? `Öppnade ${timeStr}`
+      : getPastDateString(openTime, now)
+    : isToday(openTime)
+      ? `Öppnar om ${Math.floor(minutesUntilOpen / 60)}h ${minutesUntilOpen % 60}min`
+      : getOpenString(openTime, now)
 
   if (typeof pub.beer_price === 'number' && pub.beer_price < 1) {
     pub.beer_price = undefined
@@ -185,13 +194,7 @@ export default function PubModal({ pub, open, onClose }: Props) {
             <span className="w-5 flex-shrink-0 flex items-center justify-center">
               <Clock size={16} />
             </span>
-            <span className="ml-2">
-              {isOpen
-                ? `Öppnade ${timeStr}`
-                : isToday(openTime)
-                  ? `Öppnar om ${Math.floor(minutesUntilOpen / 60)}h ${minutesUntilOpen % 60}min`
-                  : getOpenString(openTime, now)}
-            </span>
+            <span className="ml-2">{timeLabel}</span>
           </div>
           <div className="flex items-center text-gray-500">
             <span className="w-5 flex-shrink-0 flex items-center justify-center">

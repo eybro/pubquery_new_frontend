@@ -5,7 +5,6 @@ const ORIGIN = process.env.SITE_ORIGIN || 'https://pubquery.se' // set in CI for
 const API_URL = process.env.SITEMAP_API_URL || `${ORIGIN}/api/organizations/withVenues`
 const EVENTS_API_URL = process.env.SITEMAP_EVENTS_API_URL || `${ORIGIN}/api/pubs/getUpcoming`
 
-
 function slugify(text = '') {
   return text
     .toLowerCase()
@@ -65,29 +64,30 @@ async function main() {
     )
   }
 
-
   // Dynamic event pages
-const resEvents = await fetch(EVENTS_API_URL, { headers: { "accept": "application/json" } })
-if (!resEvents.ok) throw new Error(`Failed to fetch events for sitemap: HTTP ${resEvents.status}`)
-const events = await resEvents.json()
+  const resEvents = await fetch(EVENTS_API_URL, { headers: { accept: 'application/json' } })
+  if (!resEvents.ok) throw new Error(`Failed to fetch events for sitemap: HTTP ${resEvents.status}`)
+  const events = await resEvents.json()
 
-for (const e of events) {
-  // Use your slug builder
-  const titleSlug = slugify(e.title || e.display_name || "")
-  const venueSlug = slugify(e.venue_name || e.location || "")
-  const id = e.event_id
+  for (const e of events) {
+    // Use your slug builder
+    const titleSlug = slugify(e.title || e.display_name || '')
+    const venueSlug = slugify(e.venue_name || e.location || '')
+    const id = e.event_id
 
-  const slug = `${id}-${titleSlug}-${venueSlug}`
-  const lastmod = e.updated_at ? isoDate(e.updated_at) : today
+    const slug = `${id}-${titleSlug}-${venueSlug}`
+    const lastmod = e.updated_at ? isoDate(e.updated_at) : today
 
-  urlEntries.push(`
+    urlEntries.push(
+      `
   <url>
     <loc>${ORIGIN}/event/${slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
-  </url>`.trim())
-}
+  </url>`.trim()
+    )
+  }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset

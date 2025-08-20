@@ -1,7 +1,7 @@
 import { MapPin, Users, Clock, Calendar, Beer } from 'lucide-react'
 import type { Pub } from '../types/Pub'
-import { format, differenceInCalendarDays, isToday, isTomorrow } from 'date-fns'
-import { getOpenString } from '../utils/dateString'
+import { format, differenceInCalendarDays, isToday, isTomorrow, isYesterday } from 'date-fns'
+import { getOpenString, getPastDateString } from '../utils/dateString'
 import { getCapacityInfo, getVisitorStatus, isShortCard, lineLengthLabels } from '../utils/pubUtils'
 import { StatusLabel } from '../utils/capacity'
 type Props = {
@@ -63,14 +63,24 @@ export default function PubCard({ pub, onClick }: Props) {
         </p>
 
         <div className="text-sm flex items-center gap-2 mb-1">
-          {isOpen ? (
-            <>
-              <Clock size={14} className="text-green-500" />
-              <span>Öppnade {timeStr}</span>
-            </>
-          ) : isSameDay ? (
+          {isOpen && !isSameDay ? (
             <>
               <Clock size={14} className="text-blue-500" />
+              <span>{getPastDateString(openTime, now)}</span>
+            </>
+          ) : isOpen && now.getHours() < 3 && isYesterday(openTime) ? (
+            <>
+              <Clock size={14} className="text-green-500" />
+              <span>{statusText}</span>
+            </>
+          ) : isSameDay && !isOpen ? (
+            <>
+              <Clock size={14} className="text-blue-500" />
+              <span>{statusText}</span>
+            </>
+          ) : isSameDay && isOpen ? (
+            <>
+              <Clock size={14} className="text-green-500" />
               <span>{statusText}</span>
             </>
           ) : (

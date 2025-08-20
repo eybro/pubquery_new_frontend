@@ -49,9 +49,30 @@ export default function Home() {
 
   useJsonLd('home-events', eventsGraph)
 
+  useJsonLd('website', {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Pubquery',
+    url: 'https://pubquery.se/',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: 'https://pubquery.se/search?q={search_term_string}',
+      'query-input': 'required name=search_term_string',
+    },
+  })
+
+  useJsonLd('organization', {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Pubquery',
+    url: 'https://pubquery.se/',
+    logo: 'https://pubquery.se/pubquery_logo.png',
+    sameAs: ['https://www.instagram.com/pubquery.se'],
+  })
+
   return (
-    <div className="text-white min-h-screen p-4 space-y-6">
-      <div className="w-full flex justify-center mb-6">
+    <div className="text-white min-h-screen p-4 space-y-3">
+      <div className="w-full flex justify-center mb-3">
         <img
           src="/pubquery_logo.svg"
           alt="Pubquery Logo"
@@ -59,9 +80,12 @@ export default function Home() {
           draggable={false}
         />
       </div>
-      <div className="-mt-6 text-lg sm:text-2xl text-white/90 text-center font-semibold">
-        Studentpubar med liveinformation
-      </div>
+      <h1 className="text-xl sm:text-4xl font-bold text-white text-center">
+        Studentpubar i Stockholm – liveinfo
+      </h1>
+      <p className="text-white/80 text-center mt-2 max-w-2xl mx-auto">
+        Öppettider, besökare, kö-status och mycket mer.
+      </p>
 
       <LocationSection
         location="Pubar på KTH"

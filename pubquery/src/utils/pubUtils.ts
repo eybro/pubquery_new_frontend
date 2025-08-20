@@ -11,10 +11,7 @@ function hasMemberCounts(pub: Pub): pub is Pub & {
   member_count: number
   non_member_count: number
 } {
-  return (
-    typeof pub.member_count === 'number' &&
-    typeof pub.non_member_count === 'number'
-  )
+  return typeof pub.member_count === 'number' && typeof pub.non_member_count === 'number'
 }
 
 export function getCapacityInfo(pub: Pub, isOpen: boolean) {

@@ -22,9 +22,10 @@ export default function App() {
     'pathname' in v &&
     typeof (v as { pathname?: unknown }).pathname === 'string'
 
-  const backgroundLocation = state?.backgroundLocation && isRouterLoc(state.backgroundLocation)
-    ? state.backgroundLocation
-    : undefined
+  const backgroundLocation =
+    state?.backgroundLocation && isRouterLoc(state.backgroundLocation)
+      ? state.backgroundLocation
+      : undefined
 
   // Only show modal overlay if we’re currently on /event/*
   const isOnEventRoute = location.pathname.startsWith('/event/')

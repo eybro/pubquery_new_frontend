@@ -261,34 +261,34 @@ export function venueToJsonLd(venue: {
 }
 
 export const ensureMeta = (selector: string, createEl: () => HTMLMetaElement): HTMLMetaElement => {
-    const existing = document.head.querySelector(selector) as HTMLMetaElement | null
-    if (existing) return existing
-    const el = createEl()
+  const existing = document.head.querySelector(selector) as HTMLMetaElement | null
+  if (existing) return existing
+  const el = createEl()
+  document.head.appendChild(el)
+  return el
+}
+export const setNamed = (name: string, content: string) => {
+  const el = ensureMeta(`meta[name="${name}"]`, () => {
+    const m = document.createElement('meta')
+    m.setAttribute('name', name)
+    return m
+  })
+  el.setAttribute('content', content)
+}
+export const setProp = (prop: string, content: string) => {
+  const el = ensureMeta(`meta[property="${prop}"]`, () => {
+    const m = document.createElement('meta')
+    m.setAttribute('property', prop)
+    return m
+  })
+  el.setAttribute('content', content)
+}
+export const ensureLink = (rel: string) => {
+  let el = document.head.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null
+  if (!el) {
+    el = document.createElement('link')
+    el.rel = rel
     document.head.appendChild(el)
-    return el
   }
-  export const setNamed = (name: string, content: string) => {
-    const el = ensureMeta(`meta[name="${name}"]`, () => {
-      const m = document.createElement('meta')
-      m.setAttribute('name', name)
-      return m
-    })
-    el.setAttribute('content', content)
-  }
-  export const setProp = (prop: string, content: string) => {
-    const el = ensureMeta(`meta[property="${prop}"]`, () => {
-      const m = document.createElement('meta')
-      m.setAttribute('property', prop)
-      return m
-    })
-    el.setAttribute('content', content)
-  }
-  export const ensureLink = (rel: string) => {
-    let el = document.head.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null
-    if (!el) {
-      el = document.createElement('link')
-      el.rel = rel
-      document.head.appendChild(el)
-    }
-    return el
-  }
+  return el
+}

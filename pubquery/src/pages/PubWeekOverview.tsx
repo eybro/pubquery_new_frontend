@@ -336,14 +336,14 @@ export default function PubWeekOverview({
         {/* Metrics (compact & new bg) */}
         <div className="flex flex-row gap-3 mb-4 w-full">
           {selectedDay?.isToday && (weekOverview?.occupancy ?? 0) > 0 && (
-  <div className="bg-[#232b32] p-3 rounded-xl flex flex-col items-center flex-1 min-w-0 shadow border border-[#232a35]">
-    <Users size={22} className="mb-1 text-sky-400" />
-    <span className="text-lg font-bold text-white">
-      {Math.round((weekOverview?.occupancy ?? 0) * 100)}%
-    </span>
-    <span className="text-xs text-gray-400">Genomsnittlig fyllnadsgrad</span>
-  </div>
-)}
+            <div className="bg-[#232b32] p-3 rounded-xl flex flex-col items-center flex-1 min-w-0 shadow border border-[#232a35]">
+              <Users size={22} className="mb-1 text-sky-400" />
+              <span className="text-lg font-bold text-white">
+                {Math.round((weekOverview?.occupancy ?? 0) * 100)}%
+              </span>
+              <span className="text-xs text-gray-400">Genomsnittlig fyllnadsgrad</span>
+            </div>
+          )}
           {selectedDay?.cheapestBeer && selectedDay.cheapestBeer.length > 0 && (
             <div className="bg-[#232b32] p-3 rounded-xl flex flex-col items-center flex-1 min-w-0 shadow border border-[#232a35]">
               <Beer size={22} className="mb-1 text-sky-400" />
@@ -404,12 +404,7 @@ export default function PubWeekOverview({
             selectedDay.pubs.map((pub) => {
               const { href, onClick } = createPubLinkProps(pub, locationObj, navigate)
               return (
-                <a
-                  key={pub.event_id ?? href}
-                  href={href}
-                  className="block"
-                  onClick={onClick}
-                >
+                <a key={pub.event_id ?? href} href={href} className="block" onClick={onClick}>
                   <PubCard pub={pub} />
                 </a>
               )
