@@ -33,9 +33,15 @@ export default function Home() {
   const kthPubs = prepareKthPubsWithBrazilia(pubs)
 
   const suPubs = pubs
-    .filter((pub) => pub.location?.toLowerCase().startsWith('stockholms universitet'))
-    .sort(sortByDateAsc)
-
+  .filter((pub) => {
+    const loc = pub.location?.toLowerCase() || ''
+    return (
+      loc.startsWith('stockholms universitet') ||
+      loc.startsWith('karolinska')
+    )
+  })
+  .sort(sortByDateAsc)
+  
   const eventsGraph = useMemo(() => {
     const list = pubs
       // .filter(p => p.visible === 1) // uncomment if needed
