@@ -205,8 +205,8 @@ export default function PubWeekOverview({
     ? `${location_name} – pubar vecka ${weekNo} (${dayLabel}) | Pubquery`
     : `${location_name} – pubar vecka ${weekNo} | Pubquery`
   const pageDesc = selectedDay
-    ? `Öppna pubar i ${location_name} för ${dayLabel}. Se priser, karta och arrangörer. Bläddra mellan dagar och veckor.`
-    : `Öppna pubar i ${location_name}. Se priser, karta och arrangörer. Bläddra mellan dagar och veckor.`
+    ? `Öppna pubar på ${location_name} den ${dayLabel}. Se priser, karta och öppetider. Bläddra mellan dagar och veckor.`
+    : `Öppna pubar på ${location_name}. Se priser, karta och öppetider. Bläddra mellan dagar och veckor.`
 
   usePageMeta(pageTitle, pageDesc)
 
