@@ -12,6 +12,37 @@ type Props = {
   onClose: () => void
 }
 
+function isMacDesktopChrome() {
+  const ua = navigator.userAgent
+  return ua.includes('Macintosh') && ua.includes('Chrome') && !/Mobile|iP(hone|od|ad)/.test(ua)
+}
+
+function canNativeShare(data: ShareData) {
+  try {
+    // canShare is safer where available
+    // @ts-ignore
+    if (typeof navigator.canShare === 'function') {
+      // @ts-ignore
+      return navigator.canShare(data)
+    }
+  } catch {
+    /* ignore */
+  }
+  return !!navigator.share
+}
+
+async function copyToClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    // Fallback prompt as last resort
+    const ok = window.prompt('Kopiera länken:', text)
+    return ok !== null
+  }
+}
+
+
 function splitDescription(text: string, wordLimit: number) {
   const words = text.split(/\s+/)
   const needsTruncate = words.length > wordLimit
@@ -114,31 +145,40 @@ export default function PubModal({ pub, open, onClose }: Props) {
     .join(' & ')
 
   async function handleShare() {
-    if (!pub) return
-    const path = buildSharePath(pub)
-    const url = `${window.location.origin}${path}`
-    const title = pub.title || pub.venue_name || 'Studentpub'
-    const text = `${organizerNames ? organizerNames + ' – ' : ''}${pub.venue_name || pub.location || ''}`
+  if (!pub) return
+  const path = buildSharePath(pub)
+  const url = `${window.location.origin}${path}`
+  const title = pub.title || pub.venue_name || 'Studentpub'
+  const text = `${organizerNames ? organizerNames + ' – ' : ''}${pub.venue_name || pub.location || ''}`
+  const payload: ShareData = { title, text, url }
 
-    try {
-      if (navigator.share) {
-        await navigator.share({ title, text, url })
-        return
-      }
-      await navigator.clipboard.writeText(url)
-      setShareState('copied')
-      setTimeout(() => setShareState('idle'), 1500)
-    } catch {
-      try {
-        const ok = window.prompt('Kopiera länken:', url)
-        if (ok !== null) setShareState('copied')
-        else setShareState('error')
-      } catch {
-        setShareState('error')
-      }
-      setTimeout(() => setShareState('idle'), 1500)
-    }
+  // Workaround: avoid native share on macOS desktop Chrome
+  if (isMacDesktopChrome() || !canNativeShare(payload)) {
+    const ok = await copyToClipboard(url)
+    setShareState(ok ? 'copied' : 'error')
+    setTimeout(() => setShareState('idle'), 1500)
+    return
   }
+
+  try {
+    // Native share path
+    // Important: do NOT run fallbacks if the user cancels (AbortError)
+    // or you risk locking the native sheet on macOS Chrome.
+    // @ts-ignore - TS may not know ShareData
+    await navigator.share(payload)
+  } catch (err: any) {
+    const name = err?.name || ''
+    const msg = err?.message || ''
+    // User canceled → silently ignore to avoid the ghost popup bug
+    if (name === 'AbortError' || /abort/i.test(msg)) {
+      return
+    }
+    // Other errors → fallback to copy
+    const ok = await copyToClipboard(url)
+    setShareState(ok ? 'copied' : 'error')
+    setTimeout(() => setShareState('idle'), 1500)
+  }
+}
 
   return (
     <div
