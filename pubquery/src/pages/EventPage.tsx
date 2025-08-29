@@ -3,11 +3,12 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import type { Pub } from '@/types/Pub'
 import PubModal from '@/components/PubModal'
 import { useJsonLd, usePageMeta, pubToEventJsonLd } from '@/utils/seo'
+import { Link } from 'react-router-dom'
 
 // Mirror modal UI/logic
-import { Beer, Users, MapPin, Clock, Spool } from 'lucide-react'
-import { format, differenceInMinutes, isToday } from 'date-fns'
-import { getOpenString } from '@/utils/dateString'
+import { Beer, Users, MapPin, Clock, Spool, Share2} from 'lucide-react'
+import { format, differenceInMinutes, isToday, isSameDay } from 'date-fns'
+import { getOpenString, getPastDateString } from '@/utils/dateString'
 import { StatusLabel } from '@/utils/capacity'
 import { getCapacityInfo, getVisitorStatus } from '@/utils/pubUtils'
 
@@ -18,6 +19,31 @@ function extractNumericId(idSlug?: string) {
   const first = idSlug.split('-')[0] || ''
   const n = Number(first)
   return Number.isFinite(n) ? n : NaN
+}
+
+function slugify(text: string = '') {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-åäö]/g, '')
+}
+
+function base64UrlEncode(obj: unknown) {
+  const json = JSON.stringify(obj)
+  const b64 = btoa(unescape(encodeURIComponent(json)))
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+}
+function buildSharePath(pub: Pub) {
+  const hasNumericId = Number.isFinite(Number(pub.event_id))
+  if (hasNumericId) {
+    const id = pub.event_id
+    const t = slugify(pub.title || pub.display_name || 'pub')
+    const v = slugify(pub.venue_name || pub.location || '')
+    return `/event/${id}-${t}-${v}`
+  }
+  const data = base64UrlEncode(pub)
+  return `/event/synth?data=${data}`
 }
 
 function base64UrlDecode(s: string) {
@@ -51,6 +77,8 @@ export default function EventPage({ asModal }: Props) {
   const [pub, setPub] = useState<Pub | null>(passedPub)
   const [error, setError] = useState<string | null>(null)
   const [descExpanded, setDescExpanded] = useState(false)
+  const [shareState, setShareState] = useState<'idle' | 'copied' | 'error'>('idle') // NEW
+
 
   // Fallback for synthetic deep-links (no state)
   useEffect(() => {
@@ -83,12 +111,17 @@ export default function EventPage({ asModal }: Props) {
     }
   }, [pub, isNumericRoute, numericId])
 
+  // Organizer names (host [& co-host]) for SEO + UI
+  const organizerNames = pub
+    ? [pub.display_name, pub.cohost_display_name].filter(Boolean).join(' & ')
+    : ''
+
   // SEO
   const title = pub
     ? `${pub.title || 'Pub'} – ${pub.venue_name || pub.location || ''} | Pubquery`
     : 'Pub – Pubquery'
   const desc = pub
-    ? `Detaljer för ${pub.title || 'studentpub'}, arrangör ${pub.display_name || ''} på ${pub.venue_name || pub.location || 'plats'}.`
+    ? `Detaljer för ${pub.title || 'studentpub'}, arrangör ${organizerNames || pub.display_name || ''} på ${pub.venue_name || pub.location || 'plats'}.`
     : 'Pubdetaljer.'
   usePageMeta(title, desc)
   const jsonld = useMemo(() => (pub ? pubToEventJsonLd(pub) : null), [pub])
@@ -121,14 +154,23 @@ export default function EventPage({ asModal }: Props) {
     pub.beer_price = undefined as unknown as number
   }
 
-  // Opening logic (same as modal)
+  // Opening logic — mirror modal exactly
   const openTime = new Date(pub.date)
   const now = new Date()
   const isOpen = now >= openTime
   const timeStr = format(openTime, 'HH:mm')
   const minutesUntilOpen = differenceInMinutes(openTime, now)
+  const isSameCalDay = isSameDay(openTime, now)
   const { totalVisitors, externalPercentage, capacity } = getCapacityInfo(pub, isOpen)
   const visitorStatus = capacity !== null ? getVisitorStatus(capacity * 100) : null
+
+  const timeLabel = isOpen
+    ? isSameCalDay
+      ? `Öppnade ${timeStr}`
+      : getPastDateString(openTime, now) // e.g. “Öppnade 2 september”
+    : isToday(openTime)
+      ? `Öppnar om ${Math.floor(minutesUntilOpen / 60)}h ${minutesUntilOpen % 60}min`
+      : getOpenString(openTime, now)
 
   const hasAnyPrice =
     typeof pub.beer_price === 'number' ||
@@ -166,6 +208,36 @@ export default function EventPage({ asModal }: Props) {
     </div>
   )
 
+  async function handleShare() {
+    if (!pub) return
+    const path = buildSharePath(pub)
+    const url = `${window.location.origin}${path}`
+    const title = pub.title || pub.venue_name || 'Studentpub'
+    const organizerNames = [pub.display_name, pub.cohost_display_name]
+      .filter(Boolean)
+      .join(' & ')
+    const text = `${organizerNames ? organizerNames + ' – ' : ''}${pub.venue_name || pub.location || ''}`
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text, url })
+        return
+      }
+      await navigator.clipboard.writeText(url)
+      setShareState('copied')
+      setTimeout(() => setShareState('idle'), 1500)
+    } catch {
+      try {
+        const ok = window.prompt('Kopiera länken:', url)
+        if (ok !== null) setShareState('copied')
+        else setShareState('error')
+      } catch {
+        setShareState('error')
+      }
+      setTimeout(() => setShareState('idle'), 1500)
+    }
+  }
+
   return (
     <div className="min-h-screen p-4 flex justify-center">
       <div className="max-w-3xl w-full">
@@ -178,27 +250,47 @@ export default function EventPage({ asModal }: Props) {
             </div>
           )}
 
-          {/* Header row: icon, venue, organiser */}
+          {/* Header row: logos, venue, organisers */}
           <div className="flex items-center gap-3 mb-3">
-            <div
-              className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow border border-gray-200 overflow-hidden"
-              aria-hidden="true"
-            >
-              {pub.logo_url ? (
-                <img
-                  src={pub.logo_url}
-                  alt="Organisation Logo"
-                  className="object-contain w-12 h-12"
-                  draggable={false}
-                />
-              ) : (
-                <Beer size={28} className="text-blue-600" />
+            {/* Dual-logo cluster (host + optional co-host) */}
+            <div className="relative flex -space-x-2">
+              <div
+                className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow border border-gray-200 overflow-hidden"
+                aria-hidden="true"
+              >
+                {pub.logo_url ? (
+                  <img
+                    src={pub.logo_url}
+                    alt="Värd organisation"
+                    className="object-contain w-12 h-12"
+                    draggable={false}
+                  />
+                ) : (
+                  <Beer size={28} className="text-blue-600" />
+                )}
+              </div>
+
+              {pub.cohost_logo_url && (
+                <div
+                  className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow border border-gray-200 overflow-hidden"
+                  aria-hidden="true"
+                >
+                  <img
+                    src={pub.cohost_logo_url}
+                    alt="Medvärd organisation"
+                    className="object-contain w-12 h-12"
+                    draggable={false}
+                  />
+                </div>
               )}
             </div>
+
             <div>
               <h1 className="font-bold text-2xl text-gray-900">{pub.venue_name || 'Studentpub'}</h1>
-              {pub.display_name && (
-                <div className="text-gray-500 text-base -mt-0.5">{pub.display_name}</div>
+              {(pub.display_name || pub.cohost_display_name) && (
+                <div className="text-gray-500 text-base -mt-0.5">
+                  {organizerNames}
+                </div>
               )}
             </div>
           </div>
@@ -209,13 +301,7 @@ export default function EventPage({ asModal }: Props) {
               <span className="w-5 flex-shrink-0 flex items-center justify-center">
                 <Clock size={16} />
               </span>
-              <span className="ml-2">
-                {isOpen
-                  ? `Öppnade ${timeStr}`
-                  : isToday(openTime)
-                    ? `Öppnar om ${Math.floor(minutesUntilOpen / 60)}h ${minutesUntilOpen % 60}min`
-                    : getOpenString(openTime, now)}
-              </span>
+              <span className="ml-2">{timeLabel}</span>
             </div>
 
             {(pub.address || pub.maps_link) && (
@@ -284,14 +370,14 @@ export default function EventPage({ asModal }: Props) {
 
           <div
             className={`mt-2 w-full h-2 rounded overflow-hidden ${
-              totalVisitors === null ? 'bg-gray-100' : 'bg-gray-200'
+              totalVisitors === null ? 'bg-gray-100' : 'bg-[rgb(39,44,62)]'
             }`}
           >
             {totalVisitors === null ? (
               <div className="w-full h-full bg-[repeating-linear-gradient(90deg,_#e5e7eb_0,_#e5e7eb_4px,_transparent_4px,_transparent_8px)]" />
             ) : (
               <div
-                className={`${visitorStatus?.bar ?? 'bg-gray-500'} h-full`}
+                className={`${visitorStatus?.bar ?? 'bg-gray-200'} h-full`}
                 style={{ width: `${(capacity ?? 0) * 100}%` }}
               />
             )}
@@ -304,7 +390,20 @@ export default function EventPage({ asModal }: Props) {
           )}
 
           {/* Actions */}
-          <div className="flex gap-3 mt-4">
+         <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            {/* NEW: Share button */}
+            <button
+              onClick={handleShare}
+              className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium shadow transition
+                ${shareState === 'copied' ? 'bg-emerald-600 text-white' : 'bg-gray-900 text-white hover:bg-black'}
+              `}
+              aria-label="Dela event"
+              title="Dela event"
+            >
+              <Share2 size={18} />
+              {shareState === 'copied' ? 'Kopierad!' : 'Dela'}
+            </button>
+
             {pub.fb_link && (
               <a
                 href={pub.fb_link}
@@ -326,7 +425,19 @@ export default function EventPage({ asModal }: Props) {
               </a>
             )}
           </div>
+
         </div>
+
+        <div className="w-full mt-6">
+  <Link
+    to="/"
+    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-[#22282f] border border-[#313c47] shadow-sm hover:bg-[#232b32] focus:outline-none focus:ring-2 focus:ring-sky-400 transition text-gray-100"
+  >
+    <Beer size={18} className="text-sky-400" />
+    <span className="text-medium font-medium">Till alla pubar</span>
+  </Link>
+</div>
+
       </div>
     </div>
   )

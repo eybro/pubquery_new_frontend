@@ -36,13 +36,20 @@ export default function PubCard({ pub, onClick }: Props) {
       onClick={onClick}
     >
       {/* Logo or Beer icon at top right */}
-      <div
-  className="absolute top-4 right-4 z-10 flex -space-x-2"
-  onClick={(e) => e.stopPropagation()}
+     {/* Logo(s) top right */}
+{/* Logo(s) top right — let clicks pass through to the card */}
+<div
+  className="absolute top-4 right-4 z-10 flex -space-x-2 pointer-events-none select-none"
+  aria-hidden="true"
 >
   <div className="w-10 h-10 rounded-full bg-white shadow flex items-center justify-center overflow-hidden">
     {pub.logo_url ? (
-      <img src={pub.logo_url} alt="Host Logo" className="object-contain w-10 h-10" />
+      <img
+        src={pub.logo_url}
+        alt="Host Logo"
+        className="object-contain w-10 h-10"
+        draggable={false}
+      />
     ) : (
       <Beer size={28} className="text-blue-500" />
     )}
@@ -50,10 +57,17 @@ export default function PubCard({ pub, onClick }: Props) {
 
   {pub.cohost_logo_url && (
     <div className="w-10 h-10 rounded-full bg-white shadow flex items-center justify-center overflow-hidden">
-      <img src={pub.cohost_logo_url} alt="Cohost Logo" className="object-contain w-10 h-10" />
+      <img
+        src={pub.cohost_logo_url}
+        alt="Cohost Logo"
+        className="object-contain w-10 h-10"
+        draggable={false}
+      />
     </div>
   )}
 </div>
+
+
       {/* Overline / subtitle */}
       <div className="text-xs uppercase tracking-wide font-semibold mb-1 text-blue-700 truncate max-w-[calc(100%-40px)]">
         {pub.title}
