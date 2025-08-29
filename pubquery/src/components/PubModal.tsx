@@ -21,7 +21,7 @@ function splitDescription(text: string, wordLimit: number) {
 }
 
 /** helpers for share URL */
-function slugify(text = '') {
+function slugify(text: string = '') {
   return text
     .toLowerCase()
     .trim()
@@ -108,12 +108,17 @@ export default function PubModal({ pub, open, onClose }: Props) {
     </div>
   )
 
+  // NEW: combined organizer names for display + share
+  const organizerNames = [pub.display_name, pub.cohost_display_name]
+    .filter(Boolean)
+    .join(' & ')
+
   async function handleShare() {
-    if (!pub) return // TS is happy
+    if (!pub) return
     const path = buildSharePath(pub)
     const url = `${window.location.origin}${path}`
     const title = pub.title || pub.venue_name || 'Studentpub'
-    const text = `${pub.display_name ? pub.display_name + ' – ' : ''}${pub.venue_name || pub.location || ''}`
+    const text = `${organizerNames ? organizerNames + ' – ' : ''}${pub.venue_name || pub.location || ''}`
 
     try {
       if (navigator.share) {
@@ -124,7 +129,6 @@ export default function PubModal({ pub, open, onClose }: Props) {
       setShareState('copied')
       setTimeout(() => setShareState('idle'), 1500)
     } catch {
-      // last resort: select+copy via prompt
       try {
         const ok = window.prompt('Kopiera länken:', url)
         if (ok !== null) setShareState('copied')
@@ -139,7 +143,7 @@ export default function PubModal({ pub, open, onClose }: Props) {
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/70"
-      onClick={onClose} // Click outside triggers close
+      onClick={onClose}
     >
       <div
         className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl p-4 sm:p-8 animate-fadein 
@@ -161,30 +165,49 @@ export default function PubModal({ pub, open, onClose }: Props) {
           </div>
         )}
 
-        {/* Header row: icon, venue, organiser */}
+        {/* Header row: logos, venue, organisers */}
         <div className="flex items-center gap-3 mb-3">
-          <div
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow"
-            style={{ overflow: 'hidden' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {pub.logo_url ? (
-              <img
-                src={pub.logo_url}
-                alt="Organisation Logo"
-                className="object-contain w-10 h-10"
-                draggable={false}
-              />
-            ) : (
-              <Beer size={28} className="text-blue-500" />
+          {/* NEW: Dual-logo cluster (host + optional co-host) */}
+          <div className="relative flex -space-x-2">
+            <div
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {pub.logo_url ? (
+                <img
+                  src={pub.logo_url}
+                  alt="Värd organisation"
+                  className="object-contain w-10 h-10"
+                  draggable={false}
+                />
+              ) : (
+                <Beer size={28} className="text-blue-500" />
+              )}
+            </div>
+
+            {pub.cohost_logo_url && (
+              <div
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img
+                  src={pub.cohost_logo_url}
+                  alt="Medvärd organisation"
+                  className="object-contain w-10 h-10"
+                  draggable={false}
+                />
+              </div>
             )}
           </div>
+
           <div>
             {/* Venue Name */}
             <div className="font-bold text-2xl text-gray-900">{pub.venue_name}</div>
-            {/* Organiser (if present) */}
-            {pub.display_name && (
-              <div className="text-gray-500 text-base -mt-1">{pub.display_name}</div>
+            {/* Organisers (host [& co-host]) */}
+            {(pub.display_name || pub.cohost_display_name) && (
+              <div className="text-gray-500 text-base -mt-1">
+                {organizerNames}
+              </div>
             )}
           </div>
         </div>

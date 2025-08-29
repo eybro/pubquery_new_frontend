@@ -25,4 +25,6 @@ export type Pub = {
   maps_link: string
   patches: number
   logo_url: string
+  cohost_logo_url?: string | null
+  cohost_display_name?: string | null
 }

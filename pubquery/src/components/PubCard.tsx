@@ -4,6 +4,7 @@ import { format, differenceInCalendarDays, isToday, isTomorrow, isYesterday } fr
 import { getOpenString, getPastDateString } from '../utils/dateString'
 import { getCapacityInfo, getVisitorStatus, isShortCard, lineLengthLabels } from '../utils/pubUtils'
 import { StatusLabel } from '../utils/capacity'
+
 type Props = {
   pub: Pub
   onClick?: () => void
@@ -36,21 +37,23 @@ export default function PubCard({ pub, onClick }: Props) {
     >
       {/* Logo or Beer icon at top right */}
       <div
-        className="absolute top-4 right-4 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white shadow"
-        style={{ overflow: 'hidden' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {pub.logo_url ? (
-          <img
-            src={pub.logo_url}
-            alt="Organisation Logo"
-            className="object-contain w-10 h-10"
-            draggable={false}
-          />
-        ) : (
-          <Beer size={28} className="text-blue-500" />
-        )}
-      </div>
+  className="absolute top-4 right-4 z-10 flex -space-x-2"
+  onClick={(e) => e.stopPropagation()}
+>
+  <div className="w-10 h-10 rounded-full bg-white shadow flex items-center justify-center overflow-hidden">
+    {pub.logo_url ? (
+      <img src={pub.logo_url} alt="Host Logo" className="object-contain w-10 h-10" />
+    ) : (
+      <Beer size={28} className="text-blue-500" />
+    )}
+  </div>
+
+  {pub.cohost_logo_url && (
+    <div className="w-10 h-10 rounded-full bg-white shadow flex items-center justify-center overflow-hidden">
+      <img src={pub.cohost_logo_url} alt="Cohost Logo" className="object-contain w-10 h-10" />
+    </div>
+  )}
+</div>
       {/* Overline / subtitle */}
       <div className="text-xs uppercase tracking-wide font-semibold mb-1 text-blue-700 truncate max-w-[calc(100%-40px)]">
         {pub.title}
