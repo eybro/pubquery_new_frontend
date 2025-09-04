@@ -3,6 +3,7 @@ import LocationSection from '../components/LocationSection'
 import PubCard from '../components/PubCard'
 import DinnerCard from '../components/DinnerCard'
 import DinnerModal from '../components/DinnerModal'
+import DinnerPromoCard from '../components/DinnerPromoCard'
 import { Beer, Ticket, ArrowRight } from 'lucide-react'
 import type { Pub } from '../types/Pub'
 import type { Dinner } from '../types/Dinner'
@@ -11,6 +12,10 @@ import { useMemo } from 'react'
 import { prepareKthPubsWithBrazilia, sortByDateAsc } from '@/utils/kthBrazilia'
 import { createPubLinkProps } from '@/utils/eventLinks'
 import { useLocation, useNavigate } from 'react-router-dom'
+
+function isPromoDinner(d: unknown): d is { _promo: true } {
+  return !!d && (d as any)._promo === true
+}
 
 export default function Home() {
   const [pubs, setPubs] = useState<Pub[]>([])
@@ -76,6 +81,11 @@ export default function Home() {
     sameAs: ['https://www.instagram.com/pubquery.se'],
   })
 
+  const dinnersWithPromo = useMemo(
+    () => [...dinners, ({ _promo: true } as unknown as Dinner)],
+    [dinners]
+  )
+
   return (
     <div className="text-white min-h-screen p-4 space-y-3">
       <div className="w-full flex justify-center mb-3">
@@ -129,13 +139,20 @@ export default function Home() {
 
       <LocationSection
         location="Sittningar i Stockholm"
-        items={dinners}
-        renderCard={(dinner, openModal) => <DinnerCard dinner={dinner} onClick={openModal} />}
-        renderModal={(dinner, open, onClose) => (
-          <DinnerModal dinner={dinner} open={open} onClose={onClose} />
-        )}
+        items={dinnersWithPromo}
+        renderCard={(dinner, openModal) =>
+          isPromoDinner(dinner) ? (
+            <DinnerPromoCard />
+          ) : (
+            <DinnerCard dinner={dinner} onClick={openModal} />
+          )
+        }
+        renderModal={(dinner, open, onClose) =>
+          isPromoDinner(dinner) ? null : <DinnerModal dinner={dinner} open={open} onClose={onClose} />
+        }
         icon={<Ticket size={28} color="#1fbad6" className="shrink-0" />}
       />
+
     </div>
   )
 }
