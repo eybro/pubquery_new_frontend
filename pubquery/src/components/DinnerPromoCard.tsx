@@ -19,7 +19,7 @@ export default function DinnerPromoCard() {
         <div className="text-xs uppercase tracking-wide font-semibold mb-1 text-blue-700">
           Lägg till din sittning
         </div>
-        <h3 className="font-bold text-lg">Vill du att din sittning ska synas här?</h3>
+        <h3 className="font-bold text-lg max-w-[80%]">Vill du att din sittning ska synas här?</h3>
         <p className="text-sm text-gray-600 mt-2 leading-relaxed">
           Logga in på{" "}
           <a
