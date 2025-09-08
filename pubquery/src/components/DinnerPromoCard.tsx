@@ -41,7 +41,7 @@ export default function DinnerPromoCard() {
 
       <div className="border-t border-gray-300 mt-3 pt-3">
         <p className="text-sm text-gray-400 italic">
-          Lägg upp din sittning helt gratis och nå tusentals studenter!
+          Lägg upp din sittning helt gratis!
         </p>
       </div>
     </div>

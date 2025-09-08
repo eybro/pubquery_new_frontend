@@ -53,7 +53,7 @@ export default function DinnerCard({ dinner, onClick }: Props) {
   return (
     <div
       className="
-        bg-white text-black rounded-xl shadow-md p-4 min-h-[195px]
+        bg-white text-black rounded-xl shadow-md p-4 min-h-[220px]
         flex flex-col transition-all duration-200
         hover:shadow-2xl hover:scale-[1.03] hover:z-10
         cursor-pointer
