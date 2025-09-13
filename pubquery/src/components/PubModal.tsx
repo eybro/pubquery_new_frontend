@@ -4,7 +4,7 @@ import type { Pub } from '../types/Pub'
 import { useState } from 'react'
 import { getOpenString, getPastDateString } from '../utils/dateString'
 import { StatusLabel } from '../utils/capacity'
-import { getCapacityInfo, getVisitorStatus } from '../utils/pubUtils'
+import { getCapacityInfo, getVisitorStatus, lineLengthLabels } from '../utils/pubUtils'
 
 type Props = {
   pub: Pub | null
@@ -92,6 +92,7 @@ export default function PubModal({ pub, open, onClose }: Props) {
   const isSameCalDay = isSameDay(openTime, now)
   const { totalVisitors, externalPercentage, capacity } = getCapacityInfo(pub, isOpen)
   const visitorStatus = capacity !== null ? getVisitorStatus(capacity * 100) : null
+  const attendanceStarted = isOpen
 
   const timeLabel = isOpen
     ? isSameCalDay
@@ -180,6 +181,7 @@ export default function PubModal({ pub, open, onClose }: Props) {
   }
 }
 
+console.log(pub.line_length)
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/70"
@@ -299,38 +301,74 @@ export default function PubModal({ pub, open, onClose }: Props) {
 
         {/* Attendance info */}
         <div className="font-bold mb-2 text-gray-800">Kapacitet</div>
-        <div className="flex items-center gap-2 mb-1 text-gray-700 text-sm">
-          <Users size={16} />
-          <span className="font-semibold">Besökare</span>
-          <span className="ml-auto flex items-center gap-1">
-            {visitorStatus ? (
-              <StatusLabel {...visitorStatus} />
-            ) : (
-              <span className="text-gray-400">-</span>
-            )}
-          </span>
-        </div>
 
-        <div
-          className={`mt-2 w-full h-2 rounded overflow-hidden ${
-            totalVisitors === null ? 'bg-gray-100' : 'bg-[rgb(39,44,62)]'
-          }`}
-        >
-          {totalVisitors === null ? (
-            <div className="w-full h-full bg-[repeating-linear-gradient(90deg,_#e5e7eb_0,_#e5e7eb_4px,_transparent_4px,_transparent_8px)]" />
-          ) : (
-            <div
-              className={`${visitorStatus?.bar ?? 'bg-gray-200'} h-full`}
-              style={{ width: `${(capacity ?? 0) * 100}%` }}
-            />
+         {/* If queue info */}
+        {attendanceStarted &&
+          pub.line_length !== 'no_line' &&
+          pub.line_length in lineLengthLabels && (
+            <div className="mt-2 text-sm flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-1 text-gray-700">
+                <Users size={14} />
+                <span>Kö</span>
+              </div>
+              {(() => {
+                const label = lineLengthLabels[pub.line_length as keyof typeof lineLengthLabels]
+                return <StatusLabel emoji={label.emoji} text={label.text} color={label.color} />
+              })()}
+            </div>
           )}
-        </div>
 
-        {externalPercentage !== null && (
-          <div className="text-xs text-gray-500 mb-4 mt-1">
-            {externalPercentage}% externa besökare
-          </div>
-        )}
+        {/* If visitor info */}
+        {attendanceStarted &&
+          (pub.line_length === 'no_line' || !(pub.line_length in lineLengthLabels)) &&
+          totalVisitors !== null &&
+          visitorStatus && (
+            <>
+              <div className="mt-2 text-sm flex items-center gap-2 justify-between">
+                <div className="flex items-center gap-1 text-gray-700">
+                  <Users size={14} />
+                  <span>Besökare</span>
+                </div>
+                <StatusLabel
+                  emoji={visitorStatus.emoji}
+                  text={visitorStatus.text}
+                  color={visitorStatus.color}
+                />
+              </div>
+
+              {typeof pub.ratio_visible === 'number' && (
+                <div className="mt-2 w-full h-2 rounded overflow-hidden bg-[rgb(39,44,62)]">
+                  <div
+                    className={`${visitorStatus.bar} h-full`}
+                    style={{ width: `${(capacity ?? 0) * 100}%` }}
+                  ></div>
+                </div>
+              )}
+
+              {externalPercentage !== null && (
+                <p className="text-xs text-gray-500 mt-1">{externalPercentage}% externa besökare</p>
+              )}
+            </>
+          )}
+
+        {/* If "no info" */}
+        {attendanceStarted &&
+          totalVisitors === null &&
+          (pub.line_length === 'no_line' || !(pub.line_length in lineLengthLabels)) && (
+            <>
+              <div className="mt-2 text-sm flex items-center gap-2 justify-between text-gray-400">
+                <div className="flex items-center gap-1">
+                  <Users size={14} />
+                  <span>Besökare</span>
+                </div>
+                <span>-</span>
+              </div>
+              <div className="mt-2 w-full h-2 bg-gray-100 rounded overflow-hidden">
+                <div className="w-full h-full bg-[repeating-linear-gradient(90deg,_#e5e7eb_0,_#e5e7eb_4px,_transparent_4px,_transparent_8px)]"></div>
+              </div>
+            </>
+          )}
+
 
         {/* Action buttons at the bottom */}
         <div className="flex flex-wrap gap-3 mt-4">

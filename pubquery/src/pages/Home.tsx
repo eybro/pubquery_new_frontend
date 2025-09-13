@@ -13,13 +13,17 @@ import { useMemo } from 'react'
 import { prepareKthPubsWithBrazilia, sortByDateAsc } from '@/utils/kthBrazilia'
 import { createPubLinkProps } from '@/utils/eventLinks'
 import { useLocation, useNavigate } from 'react-router-dom'
+type PromoDinner = { _promo: true }
+type PromoCounter = { _promoCounter: true }
+type DinnerItem = Dinner | PromoDinner | PromoCounter
 
-function isPromoDinner(d: unknown): d is { _promo: true } {
-  return !!d && (d as any)._promo === true
+
+function isPromoDinner(d: unknown): d is PromoDinner {
+  return typeof d === 'object' && d !== null && '_promo' in d
 }
 
-function isPromoCounter(d: unknown): d is { _promoCounter: true } {
-  return !!d && (d as any)._promoCounter === true
+function isPromoCounter(d: unknown): d is PromoCounter {
+  return typeof d === 'object' && d !== null && '_promoCounter' in d
 }
 
 export default function Home() {
@@ -86,10 +90,10 @@ export default function Home() {
     sameAs: ['https://www.instagram.com/pubquery.se'],
   })
 
-  const dinnersWithPromos = useMemo(
-  () => [...dinners, ({ _promo: true } as any), ({ _promoCounter: true } as any)],
-  [dinners]
-)
+   const dinnersWithPromos = useMemo<DinnerItem[]>(
+    () => [...dinners, { _promo: true }, { _promoCounter: true }],
+    [dinners]
+  )
 
   return (
     <div className="text-white min-h-screen p-4 space-y-3">
@@ -155,10 +159,12 @@ export default function Home() {
   )
 }
         renderModal={(dinner, open, onClose) =>
-          isPromoDinner(dinner) ? null : <DinnerModal dinner={dinner} open={open} onClose={onClose} />
-        }
-        icon={<Ticket size={28} color="#1fbad6" className="shrink-0" />}
-      />
+        isPromoDinner(dinner) ? null : (
+          <DinnerModal dinner={dinner as Dinner} open={open} onClose={onClose} />
+        )
+      }
+      icon={<Ticket size={28} color="#1fbad6" className="shrink-0" />}
+    />
 
     </div>
   )

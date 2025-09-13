@@ -16,6 +16,19 @@ function isWeekdayISO(iso: string) {
   return day >= 1 && day <= 5
 }
 
+// --- helper: dedupe by event_id (fallback to name+date if needed)
+function dedupeByEventId(pubs: Pub[]): Pub[] {
+  const seen = new Set<number>()
+  return pubs.filter((p) => {
+    if (seen.has(Number(p.event_id))) return false
+    seen.add(Number(p.event_id))
+    return true
+  })
+}
+
+
+
+
 type WeekOverviewDay = {
   date: string
   weekdayShort: string
@@ -114,6 +127,7 @@ export default function PubWeekOverview({
     return (today.getDay() + 6) % 7
   })
 
+
   // Fetch data
   useEffect(() => {
     async function fetchData() {
@@ -178,6 +192,13 @@ export default function PubWeekOverview({
     window.history.pushState({}, '', url.toString())
   }
 
+
+  const isEarlyMorning = useMemo(() => {
+  const now = new Date()
+  const h = now.getHours()
+  return h >= 0 && h < 5
+}, [])
+
   const isKTH = location.toLowerCase().startsWith('kth')
 
   const daysWithBrazilia: WeekOverviewDay[] = useMemo(() => {
@@ -198,13 +219,38 @@ export default function PubWeekOverview({
   const safeIdx = Math.min(selectedDayIdx, Math.max(days.length - 1, 0))
   const selectedDay = days[safeIdx]
 
+const selectedDayForRender = useMemo(() => {
+  if (!selectedDay) return selectedDay
+  if (!isEarlyMorning) return selectedDay
+  if (!selectedDay.isToday) return selectedDay
+
+  console.log('Early morning today - merging with previous day')
+
+  const prevDay = safeIdx > 0 ? days[safeIdx - 1] : undefined
+  if (!prevDay?.pubs?.length) { return selectedDay }
+
+  console.log(selectedDay)
+  console.log(prevDay.pubs)
+
+  console.log('Merged pubs:', dedupeByEventId([...(prevDay.pubs ?? []), ...(selectedDay.pubs ?? [])]))
+
+  return {
+    ...selectedDay,
+    pubs: dedupeByEventId([...(prevDay.pubs ?? []), ...(selectedDay.pubs ?? [])]),
+  }
+}, [selectedDay, isEarlyMorning, safeIdx, days])
+
+
+
   // --- SEO strings + meta (always call hooks)
   const weekNo = format(selectedWeek, 'w', { locale: sv })
-  const dayLabel = selectedDay ? format(new Date(selectedDay.date), 'd MMMM', { locale: sv }) : ''
-  const pageTitle = selectedDay
+  const dayLabel = selectedDayForRender
+  ? format(new Date(selectedDayForRender.date), 'd MMMM', { locale: sv })
+  : ''
+  const pageTitle = selectedDayForRender
     ? `${location_name} – pubar vecka ${weekNo} (${dayLabel}) | Pubquery`
     : `${location_name} – pubar vecka ${weekNo} | Pubquery`
-  const pageDesc = selectedDay
+  const pageDesc = selectedDayForRender
     ? `Öppna pubar på ${location_name} den ${dayLabel}. Se priser, karta och öppetider. Bläddra mellan dagar och veckor.`
     : `Öppna pubar på ${location_name}. Se priser, karta och öppetider. Bläddra mellan dagar och veckor.`
 
@@ -213,27 +259,27 @@ export default function PubWeekOverview({
   useEffect(() => {
     const url = new URL(window.location.href)
     url.searchParams.set('week', ymd(selectedWeek))
-    if (selectedDay) url.searchParams.set('day', selectedDay.date.slice(0, 10))
+    if (selectedDayForRender) url.searchParams.set('day', selectedDayForRender.date.slice(0, 10))
     setCanonical(url.toString())
-  }, [selectedWeek, selectedDay])
+  }, [selectedWeek, selectedDayForRender])
 
   // --- JSON-LD ItemList for selected day (pass null while loading)
   const itemList = useMemo(() => {
-    if (!selectedDay?.pubs?.length) return null
+    if (!selectedDayForRender?.pubs?.length) return null
     return {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
       name: `Pubevenemang i ${location_name} – ${dayLabel}`,
       itemListOrder: 'https://schema.org/ItemListOrderAscending',
-      itemListElement: selectedDay.pubs.map((p, idx) => ({
+      itemListElement: selectedDayForRender.pubs.map((p, idx) => ({
         '@type': 'ListItem',
         position: idx + 1,
         url: `https://pubquery.se/?event=${p.event_id}`,
         item: pubToEventJsonLd(p),
       })),
     }
-  }, [selectedDay, location_name, dayLabel])
-  useJsonLd(`week-${location}-${selectedDay?.date ?? ''}`, itemList)
+  }, [selectedDayForRender, location_name, dayLabel])
+  useJsonLd(`week-${location}-${selectedDayForRender?.date ?? ''}`, itemList)
 
   const loading = !weekOverview
 
@@ -243,7 +289,7 @@ export default function PubWeekOverview({
         {/* H1 */}
         <h1 className="text-xl md:text-2xl font-bold text-white mb-2">
           {location_name}: vecka {weekNo}
-          {selectedDay ? ` – ${dayLabel}` : ''}
+          {selectedDayForRender ? ` – ${dayLabel}` : ''}
         </h1>
 
         {/* Week Label (calendar) + Selector Buttons */}
@@ -382,8 +428,8 @@ export default function PubWeekOverview({
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-white">
             {location_name} pubar,{' '}
-            {selectedDay
-              ? `${weekdayFullMap[selectedDay.weekdayShort as keyof typeof weekdayFullMap].toLowerCase()} ${format(new Date(selectedDay.date), 'd MMMM', { locale: sv })}`
+            {selectedDayForRender
+              ? `${weekdayFullMap[selectedDayForRender.weekdayShort as keyof typeof weekdayFullMap].toLowerCase()} ${format(new Date(selectedDayForRender.date), 'd MMMM', { locale: sv })}`
               : 'Laddar dag...'}
           </h2>
           <a
@@ -396,12 +442,12 @@ export default function PubWeekOverview({
 
         {/* Pub Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {loading || !selectedDay ? (
+          {loading || !selectedDayForRender ? (
             <div className="text-gray-400 col-span-full">Laddar…</div>
-          ) : selectedDay.pubs.length === 0 ? (
+          ) : selectedDayForRender.pubs.length === 0 ? (
             <div className="text-gray-400 col-span-full">Inga pubar denna dag.</div>
           ) : (
-            selectedDay.pubs.map((pub) => {
+            selectedDayForRender.pubs.map((pub) => {
               const { href, onClick } = createPubLinkProps(pub, locationObj, navigate)
               return (
                 <a key={pub.event_id ?? href} href={href} className="block" onClick={onClick}>
