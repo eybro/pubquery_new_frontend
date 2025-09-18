@@ -1,11 +1,16 @@
 import { Users } from "lucide-react"
 
-export default function CounterPromoCard() {
+type CounterPromoCardProps = {
+  /** Keep this in sync with MerchPromoCard if you want (ignored when flex-growing) */
+  aspectClass?: string
+}
+
+export default function CounterPromoCard({ aspectClass = "aspect-[4/3]" }: CounterPromoCardProps) {
   return (
     <div
       className="
-        bg-white text-black rounded-xl shadow-md p-4 min-h-[220px]
-        flex flex-col transition-all duration-200
+        bg-white text-black rounded-xl shadow-md p-4
+        flex flex-col h-full transition-all duration-200
         hover:shadow-2xl hover:scale-[1.03] hover:z-10
         relative
       "
@@ -15,13 +20,26 @@ export default function CounterPromoCard() {
         <Users size={28} className="text-blue-600" />
       </div>
 
-      <div>
-        <div className="text-xs uppercase tracking-wide font-semibold mb-1 text-blue-700">
-          Prova vår dörräknar-app
+      {/* FLEX-GROW MEDIA: this scales to match height of sibling cards */}
+      <div
+        className={`
+          w-full mb-3 overflow-hidden rounded-lg
+          bg-gradient-to-br from-sky-100 to-blue-200
+          flex items-center justify-center
+          flex-grow
+          min-h-[120px] sm:min-h-[140px]
+          max-h-[260px] sm:max-h-[300px]
+          ${aspectClass ? 'md:' + aspectClass : ''}
+        `}
+      >
+        <div className="flex items-center gap-2">
+          <Users className="text-blue-700" size={28} />
+          <span className="text-blue-800 font-semibold">Prova vår dörräknar-app</span>
         </div>
-        <h3 className="font-bold text-lg max-w-[85%]">
-          Pubquerys dörräknar-app
-        </h3>
+      </div>
+
+      {/* Content */}
+      <div>
         <ul className="text-sm text-gray-600 mt-2 leading-relaxed space-y-1 list-disc list-inside">
           <li>🔄 Livesynkad mellan ett obegränsat antal enheter</li>
           <li>📊 Dela live besöks- och ködata på pubquery.se</li>
@@ -29,6 +47,7 @@ export default function CounterPromoCard() {
         </ul>
       </div>
 
+      {/* Footer pinned to bottom; content above is natural, media flexes */}
       <div className="border-t border-gray-300 mt-3 pt-3">
         <p className="text-sm text-gray-400 italic">
           👉{" "}

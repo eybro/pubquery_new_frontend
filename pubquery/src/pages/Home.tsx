@@ -5,6 +5,7 @@ import DinnerCard from '../components/DinnerCard'
 import DinnerModal from '../components/DinnerModal'
 import DinnerPromoCard from '../components/DinnerPromoCard'
 import CounterPromoCard from '../components/CounterPromoCard'
+import MerchPromoCard from '../components/MerchPromoCard'
 import { Beer, Ticket, ArrowRight } from 'lucide-react'
 import type { Pub } from '../types/Pub'
 import type { Dinner } from '../types/Dinner'
@@ -16,14 +17,15 @@ import { useLocation, useNavigate } from 'react-router-dom'
 type PromoDinner = { _promo: true }
 type PromoCounter = { _promoCounter: true }
 type DinnerItem = Dinner | PromoDinner | PromoCounter
+type PromoMerch = { _promoMerch: true; title: string; image: string; link: string }
+type ExtraItem = PromoCounter | PromoMerch
 
+function isPromoMerch(d: unknown): d is PromoMerch {
+  return typeof d === 'object' && d !== null && '_promoMerch' in d
+}
 
 function isPromoDinner(d: unknown): d is PromoDinner {
   return typeof d === 'object' && d !== null && '_promo' in d
-}
-
-function isPromoCounter(d: unknown): d is PromoCounter {
-  return typeof d === 'object' && d !== null && '_promoCounter' in d
 }
 
 export default function Home() {
@@ -90,10 +92,30 @@ export default function Home() {
     sameAs: ['https://www.instagram.com/pubquery.se'],
   })
 
-   const dinnersWithPromos = useMemo<DinnerItem[]>(
-    () => [...dinners, { _promo: true }, { _promoCounter: true }],
+     const dinnersWithPromos = useMemo<DinnerItem[]>(
+    () => [...dinners, { _promo: true }],
     [dinners]
   )
+
+  const extraItems: ExtraItem[] = useMemo(
+  () => [
+    {
+      _promoMerch: true,
+      title: 'Pubquery Keps',
+      image: '/keps1.png',
+      link: 'https://pubquery.myshopify.com/products/pubquery-vintage-keps-1?variant=55780396859769',
+    },
+    {
+      _promoMerch: true,
+      title: 'Pubquery T-shirt',
+      image: '/tshirt.png',
+      link: 'https://pubquery.myshopify.com/products/pubquery-t-shirt?variant=55826927452537',
+    },
+    { _promoCounter: true }, // Counter-appen sist
+  ],
+  []
+)
+
 
   return (
     <div className="text-white min-h-screen p-4 space-y-3">
@@ -146,25 +168,51 @@ export default function Home() {
         }
       />
 
-      <LocationSection
+     
+    <LocationSection
         location="Sittningar i Stockholm"
         items={dinnersWithPromos}
         renderCard={(dinner, openModal) =>
-  isPromoDinner(dinner) ? (
-    <DinnerPromoCard />
-  ) : isPromoCounter(dinner) ? (
-    <CounterPromoCard />
-  ) : (
-    <DinnerCard dinner={dinner} onClick={openModal} />
-  )
-}
+          isPromoDinner(dinner) ? (
+            <DinnerPromoCard />
+          ) : (
+            <DinnerCard dinner={dinner as Dinner} onClick={openModal} />
+          )
+        }
         renderModal={(dinner, open, onClose) =>
-        isPromoDinner(dinner) ? null : (
-          <DinnerModal dinner={dinner as Dinner} open={open} onClose={onClose} />
-        )
-      }
-      icon={<Ticket size={28} color="#1fbad6" className="shrink-0" />}
-    />
+          isPromoDinner(dinner) ? null : (
+            <DinnerModal dinner={dinner as Dinner} open={open} onClose={onClose} />
+          )
+        }
+        icon={<Ticket size={28} color="#1fbad6" className="shrink-0" />}
+      />
+
+    <LocationSection
+  location="Mer från Pubquery"
+  items={extraItems}
+  renderCard={(item) =>
+    '_promoCounter' in item ? (
+      <CounterPromoCard/>
+    ) : isPromoMerch(item) ? (
+      <MerchPromoCard title={item.title} image={item.image} link={item.link} />
+    ) : null
+  }
+  renderModal={() => null}
+  getKey={(item) =>
+    '_promoCounter' in item ? 'counter-promo' : `merch-${item.title}`
+  }
+  icon={<Beer size={28} color="#1fbad6" className="shrink-0" />}
+  button={
+    <a
+      href="https://pubquery.myshopify.com"
+      className="px-3 py-1.5 rounded-lg bg-sky-900/80 hover:bg-sky-800 text-white font-semibold flex items-center gap-2 shadow transition text-base"
+    >
+      Webbshop <ArrowRight size={16} />
+    </a>
+  }
+/>
+
+    
 
     </div>
   )
