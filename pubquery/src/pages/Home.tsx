@@ -101,13 +101,13 @@ export default function Home() {
   () => [
     {
       _promoMerch: true,
-      title: 'Pubquery Keps',
+      title: 'Pubquery Keps - 249kr',
       image: '/keps1.png',
       link: 'https://pubquery.myshopify.com/products/pubquery-vintage-keps-1?variant=55780396859769',
     },
     {
       _promoMerch: true,
-      title: 'Pubquery T-shirt',
+      title: 'Pubquery T-shirt - 199kr',
       image: '/tshirt.png',
       link: 'https://pubquery.myshopify.com/products/pubquery-t-shirt?variant=55826927452537',
     },
