@@ -5,7 +5,6 @@ import DinnerCard from '../components/DinnerCard'
 import DinnerModal from '../components/DinnerModal'
 import DinnerPromoCard from '../components/DinnerPromoCard'
 import CounterPromoCard from '../components/CounterPromoCard'
-import MerchPromoCard from '../components/MerchPromoCard'
 import { Beer, Ticket, ArrowRight } from 'lucide-react'
 import type { Pub } from '../types/Pub'
 import type { Dinner } from '../types/Dinner'
@@ -14,15 +13,12 @@ import { useMemo } from 'react'
 import { prepareKthPubsWithBrazilia, sortByDateAsc } from '@/utils/kthBrazilia'
 import { createPubLinkProps } from '@/utils/eventLinks'
 import { useLocation, useNavigate } from 'react-router-dom'
+import StorePromoCard from '@/components/StorePromoCard'
+import OrganisationListCard from '@/components/OrganisationListCard'
 type PromoDinner = { _promo: true }
 type PromoCounter = { _promoCounter: true }
 type DinnerItem = Dinner | PromoDinner | PromoCounter
-type PromoMerch = { _promoMerch: true; title: string; image: string; link: string }
-type ExtraItem = PromoCounter | PromoMerch
-
-function isPromoMerch(d: unknown): d is PromoMerch {
-  return typeof d === 'object' && d !== null && '_promoMerch' in d
-}
+type ExtraItem = PromoCounter | { _promoStore: true } | { _promoClubs: true }
 
 function isPromoDinner(d: unknown): d is PromoDinner {
   return typeof d === 'object' && d !== null && '_promo' in d
@@ -99,19 +95,9 @@ export default function Home() {
 
   const extraItems: ExtraItem[] = useMemo(
   () => [
-    {
-      _promoMerch: true,
-      title: 'Pubquery Keps - 249kr',
-      image: '/keps1.png',
-      link: 'https://pubquery.myshopify.com/products/pubquery-vintage-keps-1?variant=55780396859769',
-    },
-    {
-      _promoMerch: true,
-      title: 'Pubquery T-shirt - 199kr',
-      image: '/tshirt.png',
-      link: 'https://pubquery.myshopify.com/products/pubquery-t-shirt?variant=55826927452537',
-    },
-    { _promoCounter: true }, // Counter-appen sist
+    { _promoStore: true },
+    { _promoClubs: true },
+    { _promoCounter: true },
   ],
   []
 )
@@ -187,19 +173,21 @@ export default function Home() {
         icon={<Ticket size={28} color="#1fbad6" className="shrink-0" />}
       />
 
-    <LocationSection
+   <LocationSection
   location="Mer från Pubquery"
   items={extraItems}
   renderCard={(item) =>
-    '_promoCounter' in item ? (
-      <CounterPromoCard/>
-    ) : isPromoMerch(item) ? (
-      <MerchPromoCard title={item.title} image={item.image} link={item.link} />
+    '_promoStore' in item ? (
+      <StorePromoCard />
+    ) : '_promoCounter' in item ? (
+      <CounterPromoCard />
+    ) : '_promoClubs' in item ? (
+      <OrganisationListCard />
     ) : null
   }
   renderModal={() => null}
   getKey={(item) =>
-    '_promoCounter' in item ? 'counter-promo' : `merch-${item.title}`
+    '_promoCounter' in item ? 'counter-promo' : '_promoStore' in item ? 'store-promo' : '_promoClubs' in item ? 'clubs-promo' : 'unknown'
   }
   icon={<Beer size={28} color="#1fbad6" className="shrink-0" />}
   button={

@@ -1,11 +1,11 @@
-import { ChartSpline } from "lucide-react"
+import { Store } from "lucide-react"
 
-type CounterPromoCardProps = {
-  /** Keep this in sync with MerchPromoCard if you want (ignored when flex-growing) */
+type MerchPromoCardProps = {
+  /** Keep this in sync with CounterPromoCard if needed */
   aspectClass?: string
 }
 
-export default function CounterPromoCard({ aspectClass = "aspect-[4/3]" }: CounterPromoCardProps) {
+export default function MerchPromoCard({ aspectClass = "aspect-[4/3]" }: MerchPromoCardProps) {
   return (
     <div
       className="
@@ -17,14 +17,14 @@ export default function CounterPromoCard({ aspectClass = "aspect-[4/3]" }: Count
     >
       {/* Icon top-right */}
       <div className="absolute top-4 right-4 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white shadow">
-        <ChartSpline size={28} className="text-blue-600" />
+        <Store size={26} className="text-green-600" />
       </div>
 
-      {/* FLEX-GROW MEDIA: this scales to match height of sibling cards */}
+      {/* FLEX-GROW MEDIA */}
       <div
         className={`
           w-full mb-3 overflow-hidden rounded-lg
-          bg-gradient-to-br from-sky-100 to-blue-200
+          bg-gradient-to-br from-green-100 to-green-200
           flex items-center justify-center
           flex-grow
           min-h-[120px] sm:min-h-[140px]
@@ -32,30 +32,30 @@ export default function CounterPromoCard({ aspectClass = "aspect-[4/3]" }: Count
           ${aspectClass ? 'md:' + aspectClass : ''}
         `}
       >
-        <div className="flex items-center gap-2">
-          <ChartSpline className="text-blue-700" size={28} />
-          <span className="text-blue-800 font-semibold">Prova vår dörräknar-app</span>
+        <div className="flex flex-col items-center text-center gap-1">
+          <Store className="text-green-700" size={32} />
+          <span className="text-green-800 font-semibold">Pubquerys webbutik</span>
         </div>
       </div>
 
       {/* Content */}
       <div>
         <ul className="text-sm text-gray-600 mt-2 leading-relaxed space-y-1 list-disc list-inside">
-          <li>🔄 Livesynkad mellan ett obegränsat antal enheter</li>
-          <li>📊 Dela live besöks- och ködata på pubquery.se</li>
-          <li>🌐 Körs direkt i webbläsaren (ingen nedladdning)</li>
+          <li>🏷️ 25% rabatt med koden <strong>pubquery25</strong></li>
+          <li>🚀 Snabb Leverans</li>
+          <li>🤝 Allt överskott går tillbaka till plattformen</li>
         </ul>
       </div>
 
-      {/* Footer pinned to bottom; content above is natural, media flexes */}
+      {/* Footer */}
       <div className="border-t border-gray-300 mt-3 pt-3">
         <p className="text-sm text-gray-400 italic">
           👉{" "}
           <a
-            href="https://counter.pubquery.se"
-            className="text-blue-700 underline hover:no-underline font-medium"
+            href="https://pubquery.myshopify.com"
+            className="text-green-700 underline hover:no-underline font-medium"
           >
-            counter.pubquery.se
+            pubquery.myshopify.com
           </a>
         </p>
       </div>
