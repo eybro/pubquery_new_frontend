@@ -190,18 +190,7 @@ export default function Home() {
     '_promoCounter' in item ? 'counter-promo' : '_promoStore' in item ? 'store-promo' : '_promoClubs' in item ? 'clubs-promo' : 'unknown'
   }
   icon={<Beer size={28} color="#1fbad6" className="shrink-0" />}
-  button={
-    <a
-      href="https://pubquery.myshopify.com"
-      className="px-3 py-1.5 rounded-lg bg-sky-900/80 hover:bg-sky-800 text-white font-semibold flex items-center gap-2 shadow transition text-base"
-    >
-      Webbshop <ArrowRight size={16} />
-    </a>
-  }
 />
-
-    
-
     </div>
   )
 }
