@@ -45,7 +45,7 @@ export default function PubStatsHeroCard({
       <div className="mt-2 text-gray-600 text-sm sm:text-base leading-relaxed">
         <ul className="list-disc list-inside space-y-1">
           <li>🔎 Aktuella öppettider och event</li>
-          <li>⏰ All data uppdateras dagligen</li>
+          <li>⏰ Uppdateras dagligen</li>
         </ul>
       </div>
 
