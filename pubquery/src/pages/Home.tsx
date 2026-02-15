@@ -13,7 +13,7 @@ import { useMemo } from 'react'
 import { prepareKthPubsWithBrazilia, sortByDateAsc } from '@/utils/kthBrazilia'
 import { createPubLinkProps } from '@/utils/eventLinks'
 import { useLocation, useNavigate } from 'react-router-dom'
-import StorePromoCard from '@/components/StorePromoCard'
+import StorePromoCard from '@/components/TotalPubCard'
 import OrganisationListCard from '@/components/OrganisationListCard'
 type PromoDinner = { _promo: true }
 type PromoCounter = { _promoCounter: true }
