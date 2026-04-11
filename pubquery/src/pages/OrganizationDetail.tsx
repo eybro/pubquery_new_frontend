@@ -213,28 +213,28 @@ export default function OrganizationDetail() {
           </a>
         </div>
 
-        <div className="bg-[#22282f] border border-[#313c47] rounded-2xl p-6 mb-6">
-          <div className="flex items-start gap-6 mb-4">
+        <div className="bg-[#22282f] border border-[#313c47] rounded-2xl p-4 sm:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-4">
             {organization.logo_url && (
               <img
                 src={organization.logo_url}
                 alt={organization.display_name}
-                className="w-24 h-24 rounded-full object-contain bg-white p-2"
+                className="w-16 h-16 sm:w-24 sm:h-24 rounded-full object-contain bg-white p-2 flex-shrink-0"
               />
             )}
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white mb-2">{organization.display_name}</h1>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 break-words">{organization.display_name}</h1>
               {organization.organization_name && organization.organization_name !== organization.display_name && (
-                <p className="text-gray-400 mb-2">{organization.organization_name}</p>
+                <p className="text-gray-400 mb-2 text-sm sm:text-base break-words">{organization.organization_name}</p>
               )}
               {organization.venue_name && (
-                <div className="flex items-center gap-2 text-gray-300 mb-2">
-                  <MapPin size={18} className="text-sky-400" />
-                  <span>{organization.venue_name}</span>
-                  {organization.location && <span className="text-gray-500">• {organization.location}</span>}
+                <div className="flex items-center gap-2 text-gray-300 mb-2 text-sm sm:text-base">
+                  <MapPin size={18} className="text-sky-400 flex-shrink-0" />
+                  <span className="break-words">{organization.venue_name}</span>
+                  {organization.location && <span className="text-gray-500 flex-shrink-0">• {organization.location}</span>}
                 </div>
               )}
-              <div className="flex gap-2 mt-3">
+              <div className="flex flex-wrap gap-2 mt-3">
                 {fbHref && (
                   <a
                     href={fbHref}

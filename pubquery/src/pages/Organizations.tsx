@@ -411,21 +411,21 @@ function OrganizationModal({ org, onClose }: { org: OrgRow; onClose: () => void 
       <div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden="true" />
 
       {/* dialog */}
-      <div className="relative z-10 w-full sm:max-w-lg bg-[#1f252a] border border-[#2f3a45] rounded-t-2xl sm:rounded-2xl p-5 shadow-xl mx-auto">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h4 className="text-lg font-semibold text-white">{org.display_name}</h4>
+      <div className="relative z-10 w-full sm:max-w-lg bg-[#1f252a] border border-[#2f3a45] rounded-t-2xl sm:rounded-2xl p-4 sm:p-5 shadow-xl mx-auto">
+        <div className="flex items-start justify-between gap-2 sm:gap-4">
+          <div className="flex-1 min-w-0">
+            <h4 className="text-lg font-semibold text-white break-words">{org.display_name}</h4>
 
             {/* Show official name if different */}
             {org.organization_name && (
-              <div className="mt-0.5 text-xs text-gray-400">
+              <div className="mt-0.5 text-xs text-gray-400 break-words">
                 <span className="font-medium text-gray-300">{org.organization_name}</span>
               </div>
             )}
           </div>
           <button
             onClick={onClose}
-            className="rounded-md px-2 py-1 text-sm text-gray-300 hover:bg-white/10"
+            className="rounded-md px-2 py-1 text-sm text-gray-300 hover:bg-white/10 flex-shrink-0"
             aria-label="Stäng"
           >
             Stäng
