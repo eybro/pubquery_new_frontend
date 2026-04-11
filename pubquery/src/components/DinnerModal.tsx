@@ -1,11 +1,28 @@
-import { X, MapPin, Calendar, CalendarClock, Ticket } from 'lucide-react'
+import { X, MapPin, Calendar, CalendarClock, Ticket, Award } from 'lucide-react'
 import type { Dinner } from '../types/Dinner'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type Props = {
   dinner: Dinner | null
   open: boolean
   onClose: () => void
+}
+
+type PatchDetails = {
+  id: number
+  name: string
+  description?: string
+  price?: number
+  image_url?: string
+  organization_name?: string
+  temporarily_sold_out?: boolean
+  discontinued?: boolean
+}
+
+function getPatchImageSrc(imageUrl?: string) {
+  if (!imageUrl) return undefined
+  const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/api/patches`
+  return `${apiUrl}/image-proxy?url=${encodeURIComponent(imageUrl)}`
 }
 
 function splitDescription(text: string, wordLimit: number) {
@@ -18,7 +35,46 @@ function splitDescription(text: string, wordLimit: number) {
 
 export default function DinnerModal({ dinner, open, onClose }: Props) {
   const [descExpanded, setDescExpanded] = useState(false)
+  const [showPatchList, setShowPatchList] = useState(false)
+  const [loadingPatchList, setLoadingPatchList] = useState(false)
+  const [dinnerPatches, setDinnerPatches] = useState<PatchDetails[]>([])
+
+  const dinnerId = dinner?.id
+
+  useEffect(() => {
+    setShowPatchList(false)
+    setDinnerPatches([])
+  }, [dinnerId])
+
   if (!open || !dinner) return null
+
+  async function loadDinnerPatches() {
+    const currentDinner = dinner
+    if (!currentDinner) return
+    if (!Number.isFinite(currentDinner.id) || currentDinner.patches !== 1 || loadingPatchList) return
+
+    try {
+      setLoadingPatchList(true)
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/patches/dinner/${currentDinner.id}`
+      )
+      if (!response.ok) throw new Error('Failed to fetch dinner patches')
+      const rows: PatchDetails[] = await response.json()
+      setDinnerPatches(rows)
+    } catch {
+      setDinnerPatches([])
+    } finally {
+      setLoadingPatchList(false)
+    }
+  }
+
+  async function handleTogglePatchList() {
+    const shouldOpen = !showPatchList
+    setShowPatchList(shouldOpen)
+    if (shouldOpen && dinnerPatches.length === 0) {
+      await loadDinnerPatches()
+    }
+  }
 
   // Opening logic
 
@@ -147,7 +203,87 @@ export default function DinnerModal({ dinner, open, onClose }: Props) {
               {dinner.venue_name}, {dinner.venue_address}
             </a>
           </div>
+          {dinner.patches === 1 && (
+            <div className="flex items-center gap-1 text-gray-700">
+              <Award size={14} className="text-green-600" />
+              <span className="text-xs">Märken säljs här!</span>
+            </div>
+          )}
         </div>
+
+        {dinner.patches === 1 && (
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={handleTogglePatchList}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-800 hover:border-sky-500 hover:text-sky-700"
+            >
+              <Award size={14} />
+              {showPatchList ? 'Dölj märken' : 'Visa märken som säljs här'}
+            </button>
+
+            {showPatchList && (
+              <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                {loadingPatchList ? (
+                  <p className="text-xs text-gray-500">Laddar märken…</p>
+                ) : dinnerPatches.length === 0 ? (
+                  <p className="text-xs text-gray-500">Inga specifika märken har länkats till sittningen ännu.</p>
+                ) : (
+                  <div className="rounded-xl border border-gray-200 bg-white p-3">
+                    {(() => {
+                      const patch = dinnerPatches[0]
+                      return (
+                        <div className="flex items-start gap-3">
+                          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+                            {patch.image_url ? (
+                              <img
+                                src={getPatchImageSrc(patch.image_url)}
+                                alt={patch.name}
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-gray-400">
+                                <Award size={18} />
+                              </div>
+                            )}
+                            {patch.temporarily_sold_out && (
+                              <span className="absolute right-1 top-1 rounded bg-orange-600 px-1 py-0.5 text-[9px] font-semibold text-white">
+                                Slutsåld
+                              </span>
+                            )}
+                            {patch.discontinued && (
+                              <span className="absolute left-1 top-1 rounded bg-red-700 px-1 py-0.5 text-[9px] font-semibold text-white">
+                                Utgången
+                              </span>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-900">{patch.name}</p>
+                            {patch.organization_name && (
+                              <p className="text-xs text-gray-500">{patch.organization_name}</p>
+                            )}
+                            {patch.price !== null && patch.price !== undefined && (
+                              <p className="text-xs font-semibold text-sky-700 mt-1">{patch.price} kr</p>
+                            )}
+                            {patch.description && (
+                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">{patch.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })()}
+                    {dinnerPatches.length > 1 && (
+                      <p className="mt-2 text-xs text-gray-500">
+                        +{dinnerPatches.length - 1} till. Öppna event-sidan för att se alla märken.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Om sittningen */}
         {dinner.description && (

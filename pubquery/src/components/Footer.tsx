@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Beer, LogIn, Mail, Home, DoorOpen } from 'lucide-react'
+import { Beer, LogIn, Mail, Home, DoorOpen, Award } from 'lucide-react'
 import { siFacebook, siInstagram } from 'simple-icons/icons'
 
 function BrandIcon({ path, color }: { path: string; color: string }) {
@@ -33,6 +33,16 @@ export default function Footer() {
           >
             <Beer size={16} className="text-sky-400" />
             <span className="text-sm font-medium">Lista över Pubar & Klubbmästerier</span>
+          </Link>
+
+          {/* Patches */}
+          <Link
+            to="/patches"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[#232b32] focus:outline-none focus:ring-2 focus:ring-sky-400 transition text-gray-100"
+            aria-label="Märken"
+          >
+            <Award size={16} className="text-sky-400" />
+            <span className="text-sm font-medium">Märken</span>
           </Link>
 
           {/* Login */}

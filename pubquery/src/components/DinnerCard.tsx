@@ -1,4 +1,4 @@
-import { MapPin, Calendar, Ticket, CalendarClock, Users } from 'lucide-react'
+import { MapPin, Calendar, Ticket, CalendarClock, Users, Award } from 'lucide-react'
 import type { Dinner } from '../types/Dinner'
 import { differenceInCalendarDays, isToday, isTomorrow } from 'date-fns'
 import { getOpenString } from '../utils/dateString'
@@ -83,6 +83,13 @@ export default function DinnerCard({ dinner, onClick }: Props) {
         {dinner.display_name}
       </div>
       <h3 className="font-bold text-lg">{dinner.title}</h3>
+
+      {dinner.patches === 1 && (
+        <div className="mt-1 mb-1 flex items-center gap-1 text-xs text-gray-700">
+          <Award size={14} className="text-green-600" />
+          <span>Märken säljs här!</span>
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col justify-start">
         <p className="text-sm text-gray-500 flex items-center gap-1 mb-1">

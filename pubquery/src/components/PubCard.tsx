@@ -1,4 +1,4 @@
-import { MapPin, Users, Clock, Calendar, Beer } from 'lucide-react'
+import { MapPin, Users, Clock, Calendar, Beer, Award } from 'lucide-react'
 import type { Pub } from '../types/Pub'
 import { format, differenceInCalendarDays, isToday, isTomorrow, isYesterday } from 'date-fns'
 import { getOpenString, getPastDateString } from '../utils/dateString'
@@ -73,6 +73,13 @@ export default function PubCard({ pub, onClick }: Props) {
         {pub.title}
       </div>
       <h3 className="font-bold text-lg">{pub.venue_name}</h3>
+
+      {pub.patches === 1 && (
+        <div className="mt-1 mb-1 flex items-center gap-1 text-xs text-gray-700">
+          <Award size={14} className="text-green-600" />
+          <span>Märken säljs här!</span>
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col justify-start">
         <p className="text-sm text-gray-500 flex items-center gap-1 mb-1">

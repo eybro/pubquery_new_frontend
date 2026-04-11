@@ -5,6 +5,31 @@ const ORIGIN = process.env.SITE_ORIGIN || 'https://pubquery.se' // set in CI for
 const API_URL = process.env.SITEMAP_API_URL || `${ORIGIN}/api/organizations/withVenues`
 const EVENTS_API_URL = process.env.SITEMAP_EVENTS_API_URL || `${ORIGIN}/api/pubs/getUpcoming`
 
+async function fetchJsonArrayOrEmpty(url, label) {
+  try {
+    const res = await fetch(url, { headers: { accept: 'application/json' } })
+    if (!res.ok) {
+      console.warn(`Sitemap: ${label} fetch failed with HTTP ${res.status}, continuing without it.`)
+      return []
+    }
+
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.toLowerCase().includes('application/json')) {
+      const preview = (await res.text()).slice(0, 120).replace(/\s+/g, ' ')
+      console.warn(
+        `Sitemap: ${label} returned non-JSON content (${contentType || 'unknown'}). Preview: ${preview}`
+      )
+      return []
+    }
+
+    const data = await res.json()
+    return Array.isArray(data) ? data : []
+  } catch (error) {
+    console.warn(`Sitemap: ${label} fetch threw error, continuing without it.`, error)
+    return []
+  }
+}
+
 function slugify(text = '') {
   return text
     .toLowerCase()
@@ -27,9 +52,7 @@ const STATIC_ROUTES = [
 
 async function main() {
   // 1) Fetch the data
-  const res = await fetch(API_URL, { headers: { accept: 'application/json' } })
-  if (!res.ok) throw new Error(`Failed to fetch orgs for sitemap: HTTP ${res.status}`)
-  const orgs = await res.json()
+  const orgs = await fetchJsonArrayOrEmpty(API_URL, 'organizations')
 
   // 2) Build <urlset>
   const today = isoDate()
@@ -48,7 +71,7 @@ async function main() {
     )
   }
 
-  // Dynamic org pages (/org/:id-:display-:venue)
+  // Dynamic organization pages (/organization/:id-:display-:venue)
   for (const o of orgs) {
     const slug = `${o.organization_id}-${slugify(o.display_name || o.organization_name || '')}-${slugify(o.venue_name || '')}`
     // If you have updated_at per org in the payload, use it; fall back to today
@@ -56,7 +79,7 @@ async function main() {
     urlEntries.push(
       `
   <url>
-    <loc>${ORIGIN}/org/${slug}</loc>
+    <loc>${ORIGIN}/organization/${slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -65,9 +88,7 @@ async function main() {
   }
 
   // Dynamic event pages
-  const resEvents = await fetch(EVENTS_API_URL, { headers: { accept: 'application/json' } })
-  if (!resEvents.ok) throw new Error(`Failed to fetch events for sitemap: HTTP ${resEvents.status}`)
-  const events = await resEvents.json()
+  const events = await fetchJsonArrayOrEmpty(EVENTS_API_URL, 'events')
 
   for (const e of events) {
     // Use your slug builder

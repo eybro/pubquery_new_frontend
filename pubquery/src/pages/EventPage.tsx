@@ -6,13 +6,28 @@ import { useJsonLd, usePageMeta, pubToEventJsonLd } from '@/utils/seo'
 import { Link } from 'react-router-dom'
 
 // Mirror modal UI/logic
-import { Beer, Users, MapPin, Clock, Spool, Share2} from 'lucide-react'
+import { Beer, Users, MapPin, Clock, Award, Share2 } from 'lucide-react'
 import { format, differenceInMinutes, isToday, isSameDay } from 'date-fns'
 import { getOpenString, getPastDateString } from '@/utils/dateString'
 import { StatusLabel } from '@/utils/capacity'
 import { getCapacityInfo, getVisitorStatus } from '@/utils/pubUtils'
 
 type Props = { asModal?: boolean }
+
+type PatchDetails = {
+  id: number
+  name: string
+  description?: string
+  price?: number
+  image_url?: string
+  organization_name?: string
+}
+
+function getPatchImageSrc(imageUrl?: string) {
+  if (!imageUrl) return undefined
+  const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/api/patches`
+  return `${apiUrl}/image-proxy?url=${encodeURIComponent(imageUrl)}`
+}
 
 function extractNumericId(idSlug?: string) {
   if (!idSlug) return NaN
@@ -28,11 +43,11 @@ function isMacDesktopChrome() {
 
 function canNativeShare(data: ShareData) {
   try {
-    // canShare is safer where available
-    // @ts-ignore
-    if (typeof navigator.canShare === 'function') {
-      // @ts-ignore
-      return navigator.canShare(data)
+    const nav = navigator as Navigator & {
+      canShare?: (shareData: ShareData) => boolean
+    }
+    if (typeof nav.canShare === 'function') {
+      return nav.canShare(data)
     }
   } catch {
     /* ignore */
@@ -109,6 +124,8 @@ export default function EventPage({ asModal }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [descExpanded, setDescExpanded] = useState(false)
   const [shareState, setShareState] = useState<'idle' | 'copied' | 'error'>('idle') // NEW
+  const [eventPatches, setEventPatches] = useState<PatchDetails[]>([])
+  const [loadingPatches, setLoadingPatches] = useState(false)
 
 
   // Fallback for synthetic deep-links (no state)
@@ -146,6 +163,29 @@ export default function EventPage({ asModal }: Props) {
   const organizerNames = pub
     ? [pub.display_name, pub.cohost_display_name].filter(Boolean).join(' & ')
     : ''
+
+  useEffect(() => {
+    if (!pub || !Number.isFinite(pub.event_id)) return
+
+    let mounted = true
+    ;(async () => {
+      try {
+        setLoadingPatches(true)
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/patches/event/${pub.event_id}`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const rows: PatchDetails[] = await res.json()
+        if (mounted) setEventPatches(rows)
+      } catch {
+        if (mounted) setEventPatches([])
+      } finally {
+        if (mounted) setLoadingPatches(false)
+      }
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [pub])
 
   // SEO
   const title = pub
@@ -259,11 +299,11 @@ export default function EventPage({ asModal }: Props) {
     // Native share path
     // Important: do NOT run fallbacks if the user cancels (AbortError)
     // or you risk locking the native sheet on macOS Chrome.
-    // @ts-ignore - TS may not know ShareData
     await navigator.share(payload)
-  } catch (err: any) {
-    const name = err?.name || ''
-    const msg = err?.message || ''
+  } catch (err: unknown) {
+    const error = err as { name?: string; message?: string }
+    const name = error.name || ''
+    const msg = error.message || ''
     // User canceled → silently ignore to avoid the ghost popup bug
     if (name === 'AbortError' || /abort/i.test(msg)) {
       return
@@ -364,12 +404,61 @@ export default function EventPage({ asModal }: Props) {
             {pub.patches === 1 && (
               <div className="flex items-center text-gray-700">
                 <span className="w-5 flex-shrink-0 flex items-center justify-center">
-                  <Spool size={16} className="text-green-600" />
+                  <Award size={16} className="text-green-600" />
                 </span>
                 <span className="ml-2 text-xs">Märken säljs här!</span>
               </div>
             )}
           </div>
+
+          {pub.patches === 1 && (
+            <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-3">
+              <h2 className="mb-2 text-sm font-semibold text-gray-800">Märken som säljs här</h2>
+              {loadingPatches ? (
+                <p className="text-xs text-gray-500">Laddar märken…</p>
+              ) : eventPatches.length === 0 ? (
+                <p className="text-xs text-gray-500">Inga specifika märken har länkats till eventet ännu.</p>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {eventPatches.map((patch) => (
+                    <div
+                      key={`event-page-patch-${patch.id}`}
+                      className="rounded-lg border border-gray-200 bg-white p-2"
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-gray-200 bg-gray-100">
+                          {patch.image_url ? (
+                            <img
+                              src={getPatchImageSrc(patch.image_url)}
+                              alt={patch.name}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-gray-400">
+                              <Award size={14} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-semibold text-gray-900">{patch.name}</p>
+                          {patch.organization_name && (
+                            <p className="truncate text-[11px] text-gray-500">{patch.organization_name}</p>
+                          )}
+                          {patch.price !== null && patch.price !== undefined && (
+                            <p className="mt-0.5 text-[11px] font-semibold text-sky-700">{patch.price} kr</p>
+                          )}
+                          {patch.description && (
+                            <p className="mt-0.5 line-clamp-2 text-[11px] text-gray-600">{patch.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Om puben */}
           {descriptionNode && (

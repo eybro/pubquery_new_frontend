@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Home, Search, MapPin, ExternalLink } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { ensureLink, setProp, setNamed } from '@/utils/seo'
 
 type OrgRow = {
@@ -96,7 +96,6 @@ export default function OrganizationsDirectory() {
   }, [])
 
   // --- deep link handling ---
-  const navigate = useNavigate()
   const { slug } = useParams() // e.g., "23-qmisk---in-sektionens-klubbmästeri"
 
   useEffect(() => {
@@ -111,7 +110,6 @@ export default function OrganizationsDirectory() {
 
   const handleClose = () => {
     setSelected(null)
-    navigate('/organizations', { replace: false })
   }
 
   // --- SEO: ItemList JSON-LD for the directory ---
@@ -301,17 +299,12 @@ export default function OrganizationsDirectory() {
                         role="list"
                       >
                         {orgs.map((o) => {
-                          const href = `/org/${o.organization_id}-${slugify(o.display_name)}-${slugify(o.venue_name)}`
+                          const href = `/organization/${o.organization_id}-${slugify(o.display_name)}`
                           return (
                             <li key={`${o.organization_id}-${o.venue_id ?? 'nv'}`}>
                               <OrgChip
                                 name={o.display_name}
                                 logoUrl={o.logo_url ?? undefined}
-                                onClick={() => {
-                                  setSelected(o)
-                                  // push a shareable URL without leaving the page
-                                  window.history.pushState({}, '', href)
-                                }}
                                 href={href}
                               />
                             </li>
@@ -350,12 +343,10 @@ function Header() {
 function OrgChip({
   name,
   logoUrl,
-  onClick,
   href,
 }: {
   name: string
   logoUrl?: string
-  onClick: () => void
   href: string
 }) {
   const initials = name
@@ -369,10 +360,6 @@ function OrgChip({
   return (
     <a
       href={href}
-      onClick={(e) => {
-        e.preventDefault()
-        onClick()
-      }}
       className="group flex items-center gap-3 p-3 rounded-xl bg-[#232b32] border border-[#2e3943] hover:bg-[#2a333c] transition w-full text-left focus:outline-none focus:ring-2 focus:ring-sky-500"
       aria-label={`Öppna information för ${name}`}
     >

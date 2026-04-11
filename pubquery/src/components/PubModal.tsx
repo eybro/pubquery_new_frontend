@@ -1,7 +1,7 @@
-import { X, Beer, Users, MapPin, Clock, Spool, Share2 } from 'lucide-react'
+import { X, Beer, Users, MapPin, Clock, Award, Share2 } from 'lucide-react'
 import { format, differenceInMinutes, isToday, isSameDay } from 'date-fns'
 import type { Pub } from '../types/Pub'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getOpenString, getPastDateString } from '../utils/dateString'
 import { StatusLabel } from '../utils/capacity'
 import { getCapacityInfo, getVisitorStatus, lineLengthLabels } from '../utils/pubUtils'
@@ -19,11 +19,11 @@ function isMacDesktopChrome() {
 
 function canNativeShare(data: ShareData) {
   try {
-    // canShare is safer where available
-    // @ts-ignore
-    if (typeof navigator.canShare === 'function') {
-      // @ts-ignore
-      return navigator.canShare(data)
+    const nav = navigator as Navigator & {
+      canShare?: (shareData: ShareData) => boolean
+    }
+    if (typeof nav.canShare === 'function') {
+      return nav.canShare(data)
     }
   } catch {
     /* ignore */
@@ -78,9 +78,63 @@ function buildSharePath(pub: Pub) {
   return `/event/synth?data=${data}`
 }
 
+function getPatchImageSrc(imageUrl?: string) {
+  if (!imageUrl) return undefined
+  const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/api/patches`
+  return `${apiUrl}/image-proxy?url=${encodeURIComponent(imageUrl)}`
+}
+
+type EventPatch = {
+  id: number
+  name: string
+  description?: string
+  price?: number
+  image_url?: string
+  organization_name?: string
+  temporarily_sold_out?: boolean
+  discontinued?: boolean
+}
+
 export default function PubModal({ pub, open, onClose }: Props) {
   const [descExpanded, setDescExpanded] = useState(false)
   const [shareState, setShareState] = useState<'idle' | 'copied' | 'error'>('idle')
+  const [showPatchList, setShowPatchList] = useState(false)
+  const [loadingPatchList, setLoadingPatchList] = useState(false)
+  const [eventPatches, setEventPatches] = useState<EventPatch[]>([])
+
+  const eventId = pub?.event_id
+
+  useEffect(() => {
+    setShowPatchList(false)
+    setEventPatches([])
+  }, [eventId])
+
+  async function loadEventPatches() {
+    if (!pub || !Number.isFinite(pub.event_id) || pub.patches !== 1 || loadingPatchList) return
+
+    try {
+      setLoadingPatchList(true)
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/patches/event/${pub.event_id}`
+      )
+      if (!response.ok) throw new Error('Failed to fetch event patches')
+      const rows: EventPatch[] = await response.json()
+      setEventPatches(rows)
+    } catch {
+      setEventPatches([])
+    } finally {
+      setLoadingPatchList(false)
+    }
+  }
+
+  const handleTogglePatchList = async () => {
+    const shouldOpen = !showPatchList
+    setShowPatchList(shouldOpen)
+    if (shouldOpen && eventPatches.length === 0) {
+      await loadEventPatches()
+    }
+  }
+
   if (!open || !pub) return null
 
   // Opening logic
@@ -165,11 +219,11 @@ export default function PubModal({ pub, open, onClose }: Props) {
     // Native share path
     // Important: do NOT run fallbacks if the user cancels (AbortError)
     // or you risk locking the native sheet on macOS Chrome.
-    // @ts-ignore - TS may not know ShareData
     await navigator.share(payload)
-  } catch (err: any) {
-    const name = err?.name || ''
-    const msg = err?.message || ''
+  } catch (err: unknown) {
+    const error = err as { name?: string; message?: string }
+    const name = error.name || ''
+    const msg = error.message || ''
     // User canceled → silently ignore to avoid the ghost popup bug
     if (name === 'AbortError' || /abort/i.test(msg)) {
       return
@@ -272,12 +326,96 @@ console.log(pub.line_length)
           {pub.patches === 1 && (
             <div className="flex items-center text-gray-700">
               <span className="w-5 flex-shrink-0 flex items-center justify-center">
-                <Spool size={16} className="text-green-600" />
+                <Award size={16} className="text-green-600" />
               </span>
               <span className="ml-2 text-xs">Märken säljs här!</span>
             </div>
           )}
         </div>
+
+        {pub.patches === 1 && (
+          <div className="mb-3">
+            <button
+              type="button"
+              onClick={handleTogglePatchList}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-800 hover:border-sky-500 hover:text-sky-700"
+            >
+              <Award size={14} />
+              {showPatchList ? 'Dölj märken' : 'Visa märken som säljs här'}
+            </button>
+
+            {showPatchList && (
+              <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                {loadingPatchList ? (
+                  <p className="text-xs text-gray-500">Laddar märken…</p>
+                ) : eventPatches.length === 0 ? (
+                  <p className="text-xs text-gray-500">Inga specifika märken har länkats till eventet ännu.</p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="space-y-2">
+                      {eventPatches.slice(0, 3).map((patch) => (
+                        <div
+                          key={`pub-modal-patch-${pub.event_id}-${patch.id}`}
+                          className="rounded-xl border border-gray-200 bg-white p-3"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+                              {patch.image_url ? (
+                                <img
+                                  src={getPatchImageSrc(patch.image_url)}
+                                  alt={patch.name}
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-gray-400">
+                                  <Award size={18} />
+                                </div>
+                              )}
+                              {patch.temporarily_sold_out && (
+                                <span className="absolute right-1 top-1 rounded bg-orange-600 px-1 py-0.5 text-[9px] font-semibold text-white">
+                                  Slutsåld
+                                </span>
+                              )}
+                              {patch.discontinued && (
+                                <span className="absolute left-1 top-1 rounded bg-red-700 px-1 py-0.5 text-[9px] font-semibold text-white">
+                                  Utgången
+                                </span>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-gray-900">{patch.name}</p>
+                              {patch.organization_name && (
+                                <p className="text-xs text-gray-500">{patch.organization_name}</p>
+                              )}
+                              {patch.price !== null && patch.price !== undefined && (
+                                <p className="text-xs font-semibold text-sky-700 mt-1">{patch.price} kr</p>
+                              )}
+                              {patch.description && (
+                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">{patch.description}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {eventPatches.length > 3 && (
+                      <p className="text-xs text-gray-500">
+                        +{eventPatches.length - 3} till. Öppna märkes-sidan för att se fler märken.
+                      </p>
+                    )}
+                    <a
+                      href="/patches"
+                      className="inline-flex rounded-lg bg-sky-700 px-3 py-2 text-xs font-medium text-white hover:bg-sky-600"
+                    >
+                      Gå till märken
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Om puben */}
         {pub.description && (

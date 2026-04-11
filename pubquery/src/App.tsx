@@ -3,6 +3,8 @@ import type { Location as RouterLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import PubWeekOverview from './pages/PubWeekOverview'
 import OrganizationsDirectory from './pages/Organizations'
+import OrganizationDetail from './pages/OrganizationDetail'
+import PatchesPage from './pages/Patches'
 import Footer from './components/Footer'
 import Canonical from './utils/Canonical'
 import NotFound from './pages/NotFound'
@@ -55,6 +57,8 @@ export default function App() {
           />
           <Route path="/organizations" element={<OrganizationsDirectory />} />
           <Route path="/org/:slug" element={<OrganizationsDirectory />} />
+          <Route path="/organization/:id" element={<OrganizationDetail />} />
+          <Route path="/patches" element={<PatchesPage />} />
 
           {/* Full-page event (direct visit) */}
           <Route path="/event/:idSlug" element={<EventPage />} />

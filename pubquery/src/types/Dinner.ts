@@ -17,4 +17,5 @@ export type Dinner = {
   venue_maps_link: string
   venue_address: string
   signup_date: string
+  patches?: number
 }
