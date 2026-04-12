@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Home, Search, MapPin, ExternalLink } from 'lucide-react'
+import { Home, Search, MapPin, ExternalLink, Map as MapIcon, List, Calendar as CalendarIcon } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import { ensureLink, setProp, setNamed } from '@/utils/seo'
+import VenueMap from '@/components/VenueMap'
 
 type OrgRow = {
   organization_id: number
@@ -17,18 +18,39 @@ type OrgRow = {
   beer_price?: number | null
   cider_price?: number | null
   drink_price?: number | null
+  venue_latitude?: number | null
+  venue_longitude?: number | null
 }
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/api/organizations/withVenues`
+
+type Event = {
+  event_id: number
+  title: string
+  date: string
+  venue_name?: string
+}
 
 export default function OrganizationsDirectory() {
   const [rows, setRows] = useState<OrgRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list')
+  const [events, setEvents] = useState<Event[]>([])
+  const [showOpenToday, setShowOpenToday] = useState(false)
 
   // Modal state
   const [selected, setSelected] = useState<OrgRow | null>(null)
+
+  // Check URL parameter for initial view mode
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const viewParam = urlParams.get('view')
+    if (viewParam === 'map') {
+      setViewMode('map')
+    }
+  }, [])
 
   const description =
     'Upptäck Stockholms studentpubar och klubbmästerierna / föreningarna som driver dem. Läs beskrivningar, se plats på kartan, se priser och följ dem på Facebook.'
@@ -88,6 +110,26 @@ export default function OrganizationsDirectory() {
         const message = e instanceof Error ? e.message : 'Något gick fel'
         setError(message)
         setLoading(false)
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  // --- fetch upcoming events ---
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/pubs/getUpcoming`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data: Event[] = await res.json()
+        if (mounted) {
+          setEvents(data)
+        }
+      } catch (e: unknown) {
+        console.error('Failed to fetch events:', e)
       }
     })()
     return () => {
@@ -157,6 +199,27 @@ export default function OrganizationsDirectory() {
       .replace(/[^a-z0-9\-åäö]/g, '') // remove weird chars, keep åäö
   }
 
+  // Check if venue is open today
+  function isVenueOpenToday(venueName: string, venueEvents: Event[]): boolean {
+    // Special case: Brazilia is open Monday-Friday
+    if (venueName.toLowerCase().includes('brazilia')) {
+      const today = new Date()
+      const dayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      return dayOfWeek >= 1 && dayOfWeek <= 5 // Monday-Friday
+    }
+
+    // Otherwise, check if there's an event today
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    return venueEvents.some(event => {
+      const eventDate = new Date(event.date)
+      return eventDate >= today && eventDate < tomorrow
+    })
+  }
+
   // --- filtering & grouping ---
   const filtered = useMemo(() => {
     if (!query.trim()) return rows
@@ -201,6 +264,60 @@ export default function OrganizationsDirectory() {
     return sorted
   }, [filtered])
 
+  // Prepare venue data for map
+  const venuesForMap = useMemo(() => {
+    const venueMap = new Map<string, { venue_name: string; location: string; maps_link?: string | null; latitude?: number | null; longitude?: number | null; organizations: OrgRow[] }>()
+    
+    for (const r of filtered) {
+      const venue = r.venue_name || 'Okänd lokal'
+      const key = `${venue}-${r.location}`
+      
+      if (!venueMap.has(key)) {
+        venueMap.set(key, {
+          venue_name: venue,
+          location: r.location || 'Okänd plats',
+          maps_link: r.maps_link,
+          latitude: r.venue_latitude,
+          longitude: r.venue_longitude,
+          organizations: [],
+        })
+      }
+      
+      venueMap.get(key)!.organizations.push(r)
+    }
+    
+    // Add upcoming events to each venue
+    const venuesWithEvents = Array.from(venueMap.values()).map(venue => {
+      const venueEvents = events.filter(e => 
+        e.venue_name && e.venue_name.toLowerCase() === venue.venue_name.toLowerCase()
+      )
+      
+      // Use coordinates from API if available
+      let coordinates: [number, number] | null = null
+      if (venue.latitude !== null && venue.latitude !== undefined && 
+          venue.longitude !== null && venue.longitude !== undefined) {
+        coordinates = [venue.latitude, venue.longitude]
+      }
+      
+      return {
+        ...venue,
+        upcomingEvents: venueEvents,
+        coordinates,
+        latitude: venue.latitude,
+        longitude: venue.longitude,
+      }
+    })
+    
+    // Filter by "open today" if enabled
+    if (showOpenToday) {
+      return venuesWithEvents.filter(venue => 
+        isVenueOpenToday(venue.venue_name, venue.upcomingEvents)
+      )
+    }
+    
+    return venuesWithEvents
+  }, [filtered, events, showOpenToday])
+
   if (loading) {
     return (
       <div className="min-h-screen p-4">
@@ -233,9 +350,9 @@ export default function OrganizationsDirectory() {
           dem.
         </p>
 
-        {/* Search */}
-        <div className="mt-4 mb-6">
-          <div className="flex items-center gap-2 bg-[#22282f] border border-[#313c47] rounded-xl px-3 py-2">
+        {/* Search and View Toggle */}
+        <div className="mt-4 mb-6 flex flex-col sm:flex-row gap-3">
+          <div className="flex items-center gap-2 bg-[#22282f] border border-[#313c47] rounded-xl px-3 py-2 flex-1">
             <Search size={18} className="text-sky-400" />
             <input
               value={query}
@@ -244,80 +361,130 @@ export default function OrganizationsDirectory() {
               className="bg-transparent text-gray-100 placeholder:text-gray-400 focus:outline-none w-full"
             />
           </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
+                viewMode === 'list'
+                  ? 'bg-sky-600 text-white'
+                  : 'bg-[#22282f] text-gray-300 hover:bg-[#2a333c] border border-[#313c47]'
+              }`}
+              aria-label="Listvy"
+            >
+              <List size={18} />
+              <span className="hidden sm:inline">Lista</span>
+            </button>
+            <button
+              onClick={() => setViewMode('map')}
+              className={`px-3 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
+                viewMode === 'map'
+                  ? 'bg-sky-600 text-white'
+                  : 'bg-[#22282f] text-gray-300 hover:bg-[#2a333c] border border-[#313c47]'
+              }`}
+              aria-label="Kartvy"
+            >
+              <MapIcon size={18} />
+              <span className="hidden sm:inline">Karta</span>
+            </button>
+            {viewMode === 'map' && (
+              <button
+                onClick={() => setShowOpenToday(!showOpenToday)}
+                className={`px-3 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
+                  showOpenToday
+                    ? 'bg-green-600 text-white'
+                    : 'bg-[#22282f] text-gray-300 hover:bg-[#2a333c] border border-[#313c47]'
+                }`}
+                aria-label="Öppna idag"
+              >
+                <CalendarIcon size={18} />
+                <span>Öppna idag</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Groups (semantic headings + lists) */}
-        <div className="space-y-10">
-          {grouped.length === 0 ? (
-            <div className="text-gray-400">Inga föreningar hittades.</div>
-          ) : (
-            grouped.map(([location, venues]) => (
-              <section key={location} aria-labelledby={`loc-${location}`}>
-                <h2 id={`loc-${location}`} className="text-2xl font-bold text-white">
-                  {location}
-                </h2>
+        {/* Map View */}
+        {viewMode === 'map' && (
+          <div className="space-y-4">
+            <VenueMap venues={venuesForMap} />
+          </div>
+        )}
 
-                <div className="space-y-6 mt-4">
-                  {venues.map(([venueName, orgs]) => (
-                    <section
-                      key={`${location}-${venueName}`}
-                      aria-labelledby={`venue-${location}-${venueName}`}
-                      className="bg-[#22282f] border border-[#313c47] rounded-2xl p-4 shadow-sm"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <h3
-                          id={`venue-${location}-${venueName}`}
-                          className="text-lg font-semibold text-white"
-                        >
-                          {venueName}
-                        </h3>
+        {/* List View */}
+        {viewMode === 'list' && (
+          <div className="space-y-10">
+            {grouped.length === 0 ? (
+              <div className="text-gray-400">Inga föreningar hittades.</div>
+            ) : (
+              grouped.map(([location, venues]) => (
+                <section key={location} aria-labelledby={`loc-${location}`}>
+                  <h2 id={`loc-${location}`} className="text-2xl font-bold text-white">
+                    {location}
+                  </h2>
 
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-gray-400">{orgs.length} st</span>
-
-                          {venueName && venueName !== 'Okänd lokal' && (
-                            <a
-                              href={
-                                orgs[0]?.maps_link ??
-                                `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueName)}`
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-[#34A853] text-white font-medium shadow hover:bg-green-600 transition"
-                              aria-label={`Öppna ${venueName} på Google Maps`}
-                            >
-                              <MapPin size={14} className="text-white" />
-                              Visa på karta
-                            </a>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Use a list for orgs */}
-                      <ul
-                        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"
-                        role="list"
+                  <div className="space-y-6 mt-4">
+                    {venues.map(([venueName, orgs]) => (
+                      <section
+                        key={`${location}-${venueName}`}
+                        aria-labelledby={`venue-${location}-${venueName}`}
+                        className="bg-[#22282f] border border-[#313c47] rounded-2xl p-4 shadow-sm"
                       >
-                        {orgs.map((o) => {
-                          const href = `/organization/${o.organization_id}-${slugify(o.display_name)}`
-                          return (
-                            <li key={`${o.organization_id}-${o.venue_id ?? 'nv'}`}>
-                              <OrgChip
-                                name={o.display_name}
-                                logoUrl={o.logo_url ?? undefined}
-                                href={href}
-                              />
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    </section>
-                  ))}
-                </div>
-              </section>
-            ))
-          )}
-        </div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3
+                            id={`venue-${location}-${venueName}`}
+                            className="text-lg font-semibold text-white"
+                          >
+                            {venueName}
+                          </h3>
+
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-400">{orgs.length} st</span>
+
+                            {venueName && venueName !== 'Okänd lokal' && (
+                              <a
+                                href={
+                                  orgs[0]?.maps_link ??
+                                  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueName)}`
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-[#34A853] text-white font-medium shadow hover:bg-green-600 transition"
+                                aria-label={`Öppna ${venueName} på Google Maps`}
+                              >
+                                <MapPin size={14} className="text-white" />
+                                Visa på karta
+                              </a>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Use a list for orgs */}
+                        <ul
+                          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"
+                          role="list"
+                        >
+                          {orgs.map((o) => {
+                            const href = `/organization/${o.organization_id}-${slugify(o.display_name)}`
+                            return (
+                              <li key={`${o.organization_id}-${o.venue_id ?? 'nv'}`}>
+                                <OrgChip
+                                  name={o.display_name}
+                                  logoUrl={o.logo_url ?? undefined}
+                                  href={href}
+                                />
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      </section>
+                    ))}
+                  </div>
+                </section>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* Modal */}

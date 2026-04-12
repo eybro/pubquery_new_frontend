@@ -5,7 +5,7 @@ import DinnerCard from '../components/DinnerCard'
 import DinnerModal from '../components/DinnerModal'
 import DinnerPromoCard from '../components/DinnerPromoCard'
 import CounterPromoCard from '../components/CounterPromoCard'
-import { Beer, Ticket, ArrowRight } from 'lucide-react'
+import { Beer, Ticket, ArrowRight, Map as MapIcon } from 'lucide-react'
 import type { Pub } from '../types/Pub'
 import type { Dinner } from '../types/Dinner'
 import { useJsonLd, pubToEventJsonLd } from '@/utils/seo'
@@ -154,7 +154,6 @@ export default function Home() {
         }
       />
 
-     
     <LocationSection
         location="Sittningar i Stockholm"
         items={dinnersWithPromos}
@@ -172,6 +171,16 @@ export default function Home() {
         }
         icon={<Ticket size={28} color="#1fbad6" className="shrink-0" />}
       />
+
+  <div className="my-4 max-w-5xl mx-auto">
+    <a
+      href="/organizations?view=map"
+      className="flex items-center justify-center gap-2 w-full px-6 py-4 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-xl shadow-lg transition transform hover:scale-[1.02]"
+    >
+      <MapIcon size={20} />
+      Se alla lokaler på en karta
+    </a>
+  </div>
 
    <LocationSection
   location="Mer från Pubquery"
