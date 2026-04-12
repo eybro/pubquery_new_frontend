@@ -4,12 +4,11 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import 'leaflet/dist/leaflet.css'
 import App from './App'
-import 'tw-animate-css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <App />
     </BrowserRouter>
-  </StrictMode>
+  </StrictMode>,
 )
